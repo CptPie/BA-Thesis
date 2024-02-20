@@ -29,6 +29,9 @@
 #include "filesystem.h"
 #include "hal.h"
 #include "objmemory.h"
+#include <cstdlib>
+#include <iostream>
+#include <map>
 #include <string>
 
 // Add some helpful methods if defined
@@ -1061,7 +1064,37 @@ private:
      instructionPointer <- instructionPointer + offset
     */
 
+    if (jitEnabled) {
+      BasicBlock *bb = (struct BasicBlock *)malloc(sizeof(struct BasicBlock));
+
+      if (basicBlocks.find(basicBlockStart) != basicBlocks.end()) {
+        // Found a basic block
+        bb = basicBlocks[basicBlockStart];
+        bb->heat++;
+      } else {
+        // Add a basic block
+        bb->blockId = basicBlockId;
+        bb->start = basicBlockStart;
+        bb->end = instructionPointer;
+        bb->heat = 1;
+        bb->compiled = false;
+        basicBlocks[basicBlockStart] = bb;
+        basicBlockId++;
+      }
+
+      // check if the current basic block passed the threshold
+      if (bb->heat > jitThreshold) {
+        // check if it has been compiled
+        if (!bb->compiled) {
+          std::cout << "JIT compiling basic block " << bb->blockId << std::endl;
+          bb->compiled = true;
+          /* jitCompile(bb); */
+        }
+      }
+    }
+
     instructionPointer = instructionPointer + offset;
+    basicBlockStart = instructionPointer;
   }
 
   // jumpIf:by:
@@ -1354,6 +1387,23 @@ private:
   int currentDisplayWidth;
   int currentDisplayHeight;
   int currentCursor;
+
+  // JIT variables
+  bool jitEnabled = true;
+  int basicBlockStart = 0;
+  int basicBlockId = 0;
+  int jitThreshold = 100;
+
+  struct BasicBlock {
+    int blockId;   // unique id for the basic block
+    int start;     // start IC of the basic block
+    int end;       // end IC of the basic block
+    int heat;      // number of times the block has been executed
+    bool compiled; // has the block been compiled
+  };
+
+  // cpp map for the basic blocks
+  std::map<int, BasicBlock *> basicBlocks;
 
   // Return a std::string for a string or symbol oop
   std::string stringFromObject(int strOop);
