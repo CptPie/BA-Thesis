@@ -1070,14 +1070,17 @@ private:
     // after a certain time is needed
     //  -> this will also lead to a free operation if the block is just not used
     //  for a long time
+    //  2024-02-20 23:18 - probably fixed the worst of the memory leak
     if (jitEnabled) {
-      BasicBlock *bb = (struct BasicBlock *)malloc(sizeof(struct BasicBlock));
+
+      BasicBlock *bb;
 
       if (basicBlocks.find(basicBlockStart) != basicBlocks.end()) {
         // Found a basic block
         bb = basicBlocks[basicBlockStart];
         bb->heat++;
       } else {
+        bb = (struct BasicBlock *)malloc(sizeof(struct BasicBlock));
         // Add a basic block
         bb->blockId = basicBlockId;
         bb->start = basicBlockStart;
