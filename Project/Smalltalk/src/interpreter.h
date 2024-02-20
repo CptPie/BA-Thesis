@@ -1064,6 +1064,12 @@ private:
      instructionPointer <- instructionPointer + offset
     */
 
+    // TODO: this will fill up RAM eventually
+    // Will need to free the memory at some point (probably after the compiled
+    // block gets discarded) Also, a way to decrement/delete the heat count
+    // after a certain time is needed
+    //  -> this will also lead to a free operation if the block is just not used
+    //  for a long time
     if (jitEnabled) {
       BasicBlock *bb = (struct BasicBlock *)malloc(sizeof(struct BasicBlock));
 
