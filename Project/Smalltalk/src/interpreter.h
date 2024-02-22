@@ -33,6 +33,7 @@
 #include <iostream>
 #include <map>
 #include <string>
+#include <vector>
 
 // Add some helpful methods if defined
 // #define DEBUGGING_SUPPORT
@@ -1080,14 +1081,26 @@ private:
         bb = basicBlocks[basicBlockStart];
         bb->heat++;
       } else {
-        bb = (struct BasicBlock *)malloc(sizeof(struct BasicBlock));
-        // Add a basic block
-        bb->blockId = basicBlockId;
-        bb->start = basicBlockStart;
-        bb->end = instructionPointer;
-        bb->heat = 1;
-        bb->compiled = false;
-        basicBlocks[basicBlockStart] = bb;
+        std::cout << "Ending basic block" << std::endl;
+        // finish off the currentBasicBlock and save it in the map
+        currentBasicBlock->end = instructionPointer;
+        basicBlocks[basicBlockStart] = currentBasicBlock;
+        // assign bb for the after conditional logic
+        bb = currentBasicBlock;
+        std::cout << bb->toString() << std::endl;
+
+        // prepare the next BasicBlock
+        std::cout << "Beginning new basic block" << std::endl;
+        currentBasicBlock =
+            (struct BasicBlock *)malloc(sizeof(struct BasicBlock));
+        currentBasicBlock->blockId = basicBlockId;
+        currentBasicBlock->start = instructionPointer + offset;
+        currentBasicBlock->heat = 1;
+        currentBasicBlock->compiled = false;
+        // TODO: i have no clue why but for some reason this segfaults ...
+        currentBasicBlock->instructions = std::vector<int>();
+        std::cout << "New basic block prepared" << std::endl;
+        std::cout << currentBasicBlock->toString() << std::endl;
         basicBlockId++;
       }
 
@@ -1095,7 +1108,7 @@ private:
       if (bb->heat > jitThreshold) {
         // check if it has been compiled
         if (!bb->compiled) {
-          std::cout << "JIT compiling basic block " << bb->blockId << std::endl;
+          std::cout << "JIT compiling: \n" << bb->toString() << std::endl;
           bb->compiled = true;
           /* jitCompile(bb); */
         }
@@ -1409,7 +1422,24 @@ private:
     int end;       // end IC of the basic block
     int heat;      // number of times the block has been executed
     bool compiled; // has the block been compiled
+    std::vector<int> instructions; // the instructions in the basic block
+
+    std::string toString() {
+      std::string str = "BasicBlock: " + std::to_string(blockId) +
+                        "\n   Start: " + std::to_string(start) +
+                        "\n   End: " + std::to_string(end) +
+                        "\n   Heat: " + std::to_string(heat) +
+                        "\n   Instructions (" +
+                        std::to_string(instructions.size()) + "):";
+      for (int i = 0; i < instructions.size(); i++) {
+        str += "\n      " + std::to_string(instructions[i]);
+      }
+      str += "\nEnd BasicBlock\n";
+      return str;
+    }
   };
+
+  BasicBlock *currentBasicBlock;
 
   // cpp map for the basic blocks
   std::map<int, BasicBlock *> basicBlocks;
