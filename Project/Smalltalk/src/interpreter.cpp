@@ -4269,9 +4269,7 @@ void Interpreter::dispatchOnThisBytecode() {
       basicBlockId++;
     }
 
-    std::cout << "currentBytecode: " << currentBytecode << std::endl;
     currentBasicBlock->instructions.push_back(currentBytecode);
-    std::cout << "bytecode pushed" << std::endl;
   }
 
   if (between_and(currentBytecode, 0, 119)) {

@@ -1081,26 +1081,18 @@ private:
         bb = basicBlocks[basicBlockStart];
         bb->heat++;
       } else {
-        std::cout << "Ending basic block" << std::endl;
         // finish off the currentBasicBlock and save it in the map
         currentBasicBlock->end = instructionPointer;
         basicBlocks[basicBlockStart] = currentBasicBlock;
         // assign bb for the after conditional logic
         bb = currentBasicBlock;
-        std::cout << bb->toString() << std::endl;
 
         // prepare the next BasicBlock
-        std::cout << "Beginning new basic block" << std::endl;
-        currentBasicBlock =
-            (struct BasicBlock *)malloc(sizeof(struct BasicBlock));
+        currentBasicBlock = new BasicBlock();
         currentBasicBlock->blockId = basicBlockId;
         currentBasicBlock->start = instructionPointer + offset;
         currentBasicBlock->heat = 1;
         currentBasicBlock->compiled = false;
-        // TODO: i have no clue why but for some reason this segfaults ...
-        currentBasicBlock->instructions = std::vector<int>();
-        std::cout << "New basic block prepared" << std::endl;
-        std::cout << currentBasicBlock->toString() << std::endl;
         basicBlockId++;
       }
 
