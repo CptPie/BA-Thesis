@@ -1065,50 +1065,53 @@ private:
      instructionPointer <- instructionPointer + offset
     */
 
-    // TODO: this will fill up RAM eventually
-    // Will need to free the memory at some point (probably after the compiled
-    // block gets discarded) Also, a way to decrement/delete the heat count
-    // after a certain time is needed
-    //  -> this will also lead to a free operation if the block is just not used
-    //  for a long time
-    //  2024-02-20 23:18 - probably fixed the worst of the memory leak
     if (jitEnabled) {
-
-      BasicBlock *bb;
-
-      if (basicBlocks.find(basicBlockStart) != basicBlocks.end()) {
-        // Found a basic block
-        bb = basicBlocks[basicBlockStart];
-        bb->heat++;
-      } else {
-        // finish off the currentBasicBlock and save it in the map
-        currentBasicBlock->end = instructionPointer;
-        basicBlocks[basicBlockStart] = currentBasicBlock;
-        // assign bb for the after conditional logic
-        bb = currentBasicBlock;
-
-        // prepare the next BasicBlock
-        currentBasicBlock = new BasicBlock();
-        currentBasicBlock->blockId = basicBlockId;
-        currentBasicBlock->start = instructionPointer + offset;
-        currentBasicBlock->heat = 1;
-        currentBasicBlock->compiled = false;
-        basicBlockId++;
-      }
-
-      // check if the current basic block passed the threshold
-      if (bb->heat > jitThreshold) {
-        // check if it has been compiled
-        if (!bb->compiled) {
-          std::cout << "JIT compiling: \n" << bb->toString() << std::endl;
-          bb->compiled = true;
-          /* jitCompile(bb); */
-        }
-      }
+      endBasicBlock(instructionPointer + offset);
     }
 
     instructionPointer = instructionPointer + offset;
     basicBlockStart = instructionPointer;
+  }
+
+  // TODO: this will fill up RAM eventually
+  // Will need to free the memory at some point (probably after the compiled
+  // block gets discarded) Also, a way to decrement/delete the heat count
+  // after a certain time is needed
+  //  -> this will also lead to a free operation if the block is just not used
+  //  for a long time
+  //  2024-02-20 23:18 - probably fixed the worst of the memory leak
+  void endBasicBlock(int nextAddress) {
+    BasicBlock *bb;
+
+    if (basicBlocks.find(basicBlockStart) != basicBlocks.end()) {
+      // Found a basic block
+      bb = basicBlocks[basicBlockStart];
+      bb->heat++;
+    } else {
+      // finish off the currentBasicBlock and save it in the map
+      currentBasicBlock->end = instructionPointer;
+      basicBlocks[basicBlockStart] = currentBasicBlock;
+      // assign bb for the after conditional logic
+      bb = currentBasicBlock;
+
+      // prepare the next BasicBlock
+      currentBasicBlock = new BasicBlock();
+      currentBasicBlock->blockId = basicBlockId;
+      currentBasicBlock->start = nextAddress;
+      currentBasicBlock->heat = 1;
+      currentBasicBlock->compiled = false;
+      basicBlockId++;
+    }
+
+    // check if the current basic block passed the threshold
+    if (bb->heat > jitThreshold) {
+      // check if it has been compiled
+      if (!bb->compiled) {
+        std::cout << "JIT compiling: \n" << bb->toString() << std::endl;
+        bb->compiled = true;
+        /* jitCompile(bb); */
+      }
+    }
   }
 
   // jumpIf:by:
