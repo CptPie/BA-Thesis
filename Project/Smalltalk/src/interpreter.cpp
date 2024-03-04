@@ -34,6 +34,7 @@
 #include <cstdlib>
 #include <iostream>
 #include <limits>
+#include <string>
 
 inline bool between_and(int value, int min, int max) {
   return value >= min && value <= max;
@@ -4264,12 +4265,13 @@ void Interpreter::dispatchOnThisBytecode() {
       currentBasicBlock->start = instructionPointer;
       currentBasicBlock->heat = 1;
       currentBasicBlock->compiled = false;
-      currentBasicBlock->instructions = std::vector<int>();
+      currentBasicBlock->instructions = std::vector<Instruction>();
 
       basicBlockId++;
     }
 
-    currentBasicBlock->instructions.push_back(currentBytecode);
+    currentBasicBlock->instructions.push_back(Instruction{
+        currentBytecode, getInstructionDescription(currentBytecode)});
   }
 
   if (between_and(currentBytecode, 0, 119)) {

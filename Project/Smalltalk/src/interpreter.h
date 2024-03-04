@@ -30,6 +30,7 @@
 #include "hal.h"
 #include "objmemory.h"
 #include <cstdlib>
+#include <iomanip>
 #include <iostream>
 #include <map>
 #include <string>
@@ -1114,6 +1115,75 @@ private:
     }
   }
 
+  std::string getInstructionDescription(int bytecode) {
+    switch (bytecode) {
+    case 0 ... 15:
+      return "Push Receiver Variable";
+    case 16 ... 31:
+      return "Push Temporary Location";
+    case 32 ... 63:
+      return "Push Literal Constant";
+    case 64 ... 95:
+      return "Push Literal Variable";
+    case 96 ... 103:
+      return "Pop and Store Receiver Variable";
+    case 104 ... 111:
+      return "Pop and Store Temporary Location";
+    case 112 ... 119:
+      return "Push";
+    case 120 ... 123:
+      return "Return";
+    case 124 ... 125:
+      return "Return Stack Top";
+    case 126 ... 127:
+      return "unused";
+    case 128:
+      return "Push";
+    case 129:
+      return "Store";
+    case 130:
+      return "Pop and Store";
+    case 131:
+      return "Send Literal 5 bit Selector with 3 bit Arguments";
+    case 132:
+      return "Send Literal 8 bit Selector with 8 bit Arguments";
+    case 133:
+      return "Send Literal Selector 5 bit to Superclass with 3 bit Arguments";
+    case 134:
+      return "Send Literal Selector 8 bit to Superclass with 8 bit Arguments";
+    case 135:
+      return "Pop Stack Top";
+    case 136:
+      return "Duplicate Stack Top";
+    case 137:
+      return "Push Active Context";
+    case 138 ... 143:
+      return "unused";
+    case 144 ... 151:
+      return "Jump Short";
+    case 152 ... 159:
+      return "Pop and Jump Short on False";
+    case 160 ... 167:
+      return "Jump Long";
+    case 168 ... 171:
+      return "Pop and Jump Long on True";
+    case 172 ... 175:
+      return "Pop and Jump Long on False";
+    case 176 ... 191:
+      return "Send Arithmetic Message";
+    case 192 ... 207:
+      return "Send Special Message";
+    case 208 ... 223:
+      return "Send Literal Selector with 0 Arguments";
+    case 224 ... 239:
+      return "Send Literal Selector with 1 Argument";
+    case 240 ... 255:
+      return "Send Literal Selector with 2 Arguments";
+    default:
+      return "unknown";
+    }
+  }
+
   // jumpIf:by:
   void jumpIf_by(int condition, int offset);
 
@@ -1411,13 +1481,25 @@ private:
   int basicBlockId = 0;
   int jitThreshold = 100;
 
+  struct Instruction {
+    int bytecode;
+    std::string Name;
+
+    std::string toString() {
+      std::stringstream stream;
+      stream << std::setw(3) << std::to_string(bytecode) << "  " << Name;
+      return stream.str();
+    }
+  };
+
   struct BasicBlock {
     int blockId;   // unique id for the basic block
     int start;     // start IC of the basic block
     int end;       // end IC of the basic block
     int heat;      // number of times the block has been executed
     bool compiled; // has the block been compiled
-    std::vector<int> instructions; // the instructions in the basic block
+    std::vector<Instruction>
+        instructions; // the instructions in the basic block
 
     std::string toString() {
       std::string str = "BasicBlock: " + std::to_string(blockId) +
@@ -1427,7 +1509,7 @@ private:
                         "\n   Instructions (" +
                         std::to_string(instructions.size()) + "):";
       for (int i = 0; i < instructions.size(); i++) {
-        str += "\n      " + std::to_string(instructions[i]);
+        str += "\n      " + instructions[i].toString();
       }
       str += "\nEnd BasicBlock\n";
       return str;
