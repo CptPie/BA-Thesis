@@ -31,9 +31,11 @@
 #include <cassert>
 #include <cmath>
 #include <cstdint>
+#include <cstdio>
 #include <cstdlib>
 #include <iostream>
 #include <limits>
+#include <ostream>
 #include <string>
 
 inline bool between_and(int value, int min, int max) {
@@ -701,8 +703,8 @@ void Interpreter::fetchContextRegisters() {
   receiver = memory.fetchPointer_ofObject(ReceiverIndex, homeContext);
   method = memory.fetchPointer_ofObject(MethodIndex, homeContext);
   instructionPointer = instructionPointerOfContext(activeContext) - 1;
-  if (jitEnabled) {
-    endBasicBlock(instructionPointer);
+  if (jitEnabled && currentBasicBlock != nullptr) {
+    currentBasicBlock->start = instructionPointer + 1;
   }
   stackPointer = stackPointerOfContext(activeContext) + TempFrameStart - 1;
 }
@@ -1320,6 +1322,10 @@ bool Interpreter::lookupMethodInClass(int cls) {
 
 // returnBytecode
 void Interpreter::returnBytecode() {
+  std::cout << "RETURN STATEMENT, Block is: " << currentBasicBlock->blockId
+            << " Instr Len is " << currentBasicBlock->instructions.size()
+            << std::endl;
+
   /* "source"
        currentBytecode = 120
                ifTrue: [^self returnValue: receiver
@@ -1359,6 +1365,9 @@ void Interpreter::returnBytecode() {
   case 125:
     returnValue_to(popStack(), caller());
     break;
+  default:
+    std::cerr << "WHAT THE FUCK" << std::endl;
+    exit(1);
   }
 }
 
@@ -1400,6 +1409,11 @@ void Interpreter::returnToActiveContext(int aContext) {
 void Interpreter::returnValue_to(int resultPointer, int contextPointer) {
   int sendersIP;
 
+  if (jitEnabled) {
+    endBasicBlock(instructionPointer);
+  } else {
+    std::cout << "JIT IS NOT ENABLED, WHAT THE FUCK?!" << std::endl;
+  }
   /* "source"
        contextPointer = NilPointer
                ifTrue: [self push: activeContext.
@@ -4269,14 +4283,18 @@ void Interpreter::dispatchOnThisBytecode() {
       currentBasicBlock->blockId = basicBlockId;
       currentBasicBlock->start = instructionPointer;
       currentBasicBlock->heat = 1;
+      currentBasicBlock->end = -1;
+      currentBasicBlock->hasEnded = false;
       currentBasicBlock->compiled = false;
       currentBasicBlock->instructions = std::vector<Instruction>();
 
       basicBlockId++;
     }
 
-    currentBasicBlock->instructions.push_back(Instruction{
-        currentBytecode, getInstructionDescription(currentBytecode)});
+    if (!currentBasicBlock->hasEnded) {
+      currentBasicBlock->instructions.push_back(Instruction{
+          currentBytecode, getInstructionDescription(currentBytecode)});
+    }
   }
 
   if (between_and(currentBytecode, 0, 119)) {
@@ -4685,6 +4703,9 @@ void Interpreter::longConditionalJump() {
 
 // jumpBytecode
 void Interpreter::jumpBytecode() {
+  std::cout << "JUMP STATEMENT, Block is: " << currentBasicBlock->blockId
+            << " Instr Len is " << currentBasicBlock->instructions.size()
+            << std::endl;
   /* "source"
        (currentBytecode between: 144 and: 151)
                ifTrue: [^self shortUnconditionalJump].

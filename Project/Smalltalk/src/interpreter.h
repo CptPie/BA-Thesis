@@ -1094,11 +1094,17 @@ private:
       bb = basicBlocks[basicBlockStart];
       bb->heat++;
     } else {
-      std::cout << "Ending basicblock " << currentBasicBlock->blockId
-                << " with instructions size of: "
-                << currentBasicBlock->instructions.size() << std::endl;
+      std::cout
+          << "Ending basicblock " << currentBasicBlock->blockId
+          << " with instructions size of: "
+          << currentBasicBlock->instructions.size() << "\n Reason: "
+          << currentBasicBlock
+                 ->instructions[currentBasicBlock->instructions.size() - 1]
+                 .Name
+          << std::endl;
       // finish off the currentBasicBlock and save it in the map
       currentBasicBlock->end = instructionPointer;
+      currentBasicBlock->nextAddress = nextAddress + 1;
       basicBlocks[basicBlockStart] = currentBasicBlock;
       // assign bb for the after conditional logic
       bb = currentBasicBlock;
@@ -1106,7 +1112,8 @@ private:
       // prepare the next BasicBlock
       currentBasicBlock = new BasicBlock();
       currentBasicBlock->blockId = basicBlockId;
-      currentBasicBlock->start = nextAddress;
+      currentBasicBlock->start = nextAddress + 1;
+      currentBasicBlock->end = -1;
       currentBasicBlock->heat = 1;
       currentBasicBlock->compiled = false;
       basicBlockId++;
@@ -1506,11 +1513,13 @@ private:
   };
 
   struct BasicBlock {
-    int blockId;   // unique id for the basic block
-    int start;     // start IC of the basic block
-    int end;       // end IC of the basic block
-    int heat;      // number of times the block has been executed
-    bool compiled; // has the block been compiled
+    int blockId;     // unique id for the basic block
+    int start;       // start IC of the basic block
+    int end;         // end IC of the basic block
+    int heat;        // number of times the block has been executed
+    bool compiled;   // has the block been compiled
+    int nextAddress; // the next address after the block
+    bool hasEnded;   // has the block ended
     std::vector<Instruction>
         instructions; // the instructions in the basic block
 
@@ -1519,6 +1528,7 @@ private:
                         "\n   Start: " + std::to_string(start) +
                         "\n   End: " + std::to_string(end) +
                         "\n   Heat: " + std::to_string(heat) +
+                        "\n   nextAddress: " + std::to_string(nextAddress) +
                         "\n   Instructions (" +
                         std::to_string(instructions.size()) + "):";
       for (int i = 0; i < instructions.size(); i++) {
