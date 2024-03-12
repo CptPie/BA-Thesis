@@ -33,6 +33,7 @@
 #include <iomanip>
 #include <iostream>
 #include <map>
+#include <ostream>
 #include <string>
 #include <vector>
 
@@ -1093,6 +1094,9 @@ private:
       bb = basicBlocks[basicBlockStart];
       bb->heat++;
     } else {
+      std::cout << "Ending basicblock " << currentBasicBlock->blockId
+                << " with instructions size of: "
+                << currentBasicBlock->instructions.size() << std::endl;
       // finish off the currentBasicBlock and save it in the map
       currentBasicBlock->end = instructionPointer;
       basicBlocks[basicBlockStart] = currentBasicBlock;
@@ -1112,7 +1116,12 @@ private:
     if (bb->heat > jitThreshold) {
       // check if it has been compiled
       if (!bb->compiled) {
-        std::cout << "JIT compiling: \n" << bb->toString() << std::endl;
+        std::cout << "JIT compiling: \n"
+                  << bb->blockId << " with size of: " << bb->instructions.size()
+                  << std::endl;
+        if (bb->instructions.size() > 10000) {
+          std::cerr << bb->toString() << std::endl;
+        }
         bb->compiled = true;
         /* jitCompile(bb); */
       }
@@ -1430,7 +1439,7 @@ private:
   int homeContext;
   int method;
   int receiver;
-  int instructionPointer;
+  int instructionPointer = 0;
   int stackPointer;
   int currentBytecode;
   bool successFlag;
