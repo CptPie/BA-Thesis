@@ -1082,6 +1082,10 @@ private:
   //  for a long time
   //  2024-02-20 23:18 - probably fixed the worst of the memory leak
   void endBasicBlock(int nextAddress) {
+    if (currentBasicBlock == nullptr) {
+      std::cout << "No basic block" << std::endl;
+      return;
+    }
     BasicBlock *bb;
 
     if (basicBlocks.find(basicBlockStart) != basicBlocks.end()) {

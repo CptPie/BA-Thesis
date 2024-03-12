@@ -701,6 +701,9 @@ void Interpreter::fetchContextRegisters() {
   receiver = memory.fetchPointer_ofObject(ReceiverIndex, homeContext);
   method = memory.fetchPointer_ofObject(MethodIndex, homeContext);
   instructionPointer = instructionPointerOfContext(activeContext) - 1;
+  if (jitEnabled) {
+    endBasicBlock(instructionPointer);
+  }
   stackPointer = stackPointerOfContext(activeContext) + TempFrameStart - 1;
 }
 
@@ -4259,6 +4262,8 @@ void Interpreter::dispatchOnThisBytecode() {
       // there is no basic block yet, hence we are probably on the first
       // instruction
       // -> start a new basic block
+      std::cout << "Creating new first basic block at instructionPointer: "
+                << instructionPointer << std::endl;
       currentBasicBlock =
           (struct BasicBlock *)malloc(sizeof(struct BasicBlock));
       currentBasicBlock->blockId = basicBlockId;
