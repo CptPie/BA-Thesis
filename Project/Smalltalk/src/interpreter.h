@@ -28,6 +28,7 @@
 #pragma once
 #include "filesystem.h"
 #include "hal.h"
+#include "jit.h"
 #include "objmemory.h"
 #include <cstdlib>
 #include <iomanip>
@@ -36,6 +37,9 @@
 #include <ostream>
 #include <string>
 #include <vector>
+
+// enable JIT
+#define JIT_ENABLED
 
 // Add some helpful methods if defined
 // #define DEBUGGING_SUPPORT
@@ -1067,72 +1071,12 @@ private:
      instructionPointer <- instructionPointer + offset
     */
 
-    if (jitEnabled) {
-      endBasicBlock(instructionPointer + offset);
-    }
+#ifdef JIT_ENABLED
+    /* std::cout << "JIT: Jump: " << instructionPointer << std::endl; */
+    jit->endBasicBlock(instructionPointer, instructionPointer + offset);
+#endif
 
     instructionPointer = instructionPointer + offset;
-    basicBlockStart = instructionPointer;
-  }
-
-  // TODO: this will fill up RAM eventually
-  // Will need to free the memory at some point (probably after the compiled
-  // block gets discarded) Also, a way to decrement/delete the heat count
-  // after a certain time is needed
-  //  -> this will also lead to a free operation if the block is just not used
-  //  for a long time
-  //  2024-02-20 23:18 - probably fixed the worst of the memory leak
-  void endBasicBlock(int nextAddress) {
-    if (currentBasicBlock == nullptr) {
-      std::cout << "No basic block" << std::endl;
-      return;
-    }
-    BasicBlock *bb;
-
-    if (basicBlocks.find(basicBlockStart) != basicBlocks.end()) {
-      // Found a basic block
-      bb = basicBlocks[basicBlockStart];
-      bb->heat++;
-    } else {
-      std::cout
-          << "Ending basicblock " << currentBasicBlock->blockId
-          << " with instructions size of: "
-          << currentBasicBlock->instructions.size() << "\n Reason: "
-          << currentBasicBlock
-                 ->instructions[currentBasicBlock->instructions.size() - 1]
-                 .Name
-          << std::endl;
-      // finish off the currentBasicBlock and save it in the map
-      currentBasicBlock->end = instructionPointer;
-      currentBasicBlock->nextAddress = nextAddress + 1;
-      basicBlocks[basicBlockStart] = currentBasicBlock;
-      // assign bb for the after conditional logic
-      bb = currentBasicBlock;
-
-      // prepare the next BasicBlock
-      currentBasicBlock = new BasicBlock();
-      currentBasicBlock->blockId = basicBlockId;
-      currentBasicBlock->start = nextAddress + 1;
-      currentBasicBlock->end = -1;
-      currentBasicBlock->heat = 1;
-      currentBasicBlock->compiled = false;
-      basicBlockId++;
-    }
-
-    // check if the current basic block passed the threshold
-    if (bb->heat > jitThreshold) {
-      // check if it has been compiled
-      if (!bb->compiled) {
-        std::cout << "JIT compiling: \n"
-                  << bb->blockId << " with size of: " << bb->instructions.size()
-                  << std::endl;
-        if (bb->instructions.size() > 10000) {
-          std::cerr << bb->toString() << std::endl;
-        }
-        bb->compiled = true;
-        /* jitCompile(bb); */
-      }
-    }
   }
 
   std::string getInstructionDescription(int bytecode) {
@@ -1495,54 +1439,7 @@ private:
   int currentDisplayHeight;
   int currentCursor;
 
-  // JIT variables
-  bool jitEnabled = true;
-  int basicBlockStart = 0;
-  int basicBlockId = 0;
-  int jitThreshold = 100;
-
-  struct Instruction {
-    int bytecode;
-    std::string Name;
-
-    std::string toString() {
-      std::stringstream stream;
-      stream << std::setw(3) << std::to_string(bytecode) << "  " << Name;
-      return stream.str();
-    }
-  };
-
-  struct BasicBlock {
-    int blockId;     // unique id for the basic block
-    int start;       // start IC of the basic block
-    int end;         // end IC of the basic block
-    int heat;        // number of times the block has been executed
-    bool compiled;   // has the block been compiled
-    int nextAddress; // the next address after the block
-    bool hasEnded;   // has the block ended
-    std::vector<Instruction>
-        instructions; // the instructions in the basic block
-
-    std::string toString() {
-      std::string str = "BasicBlock: " + std::to_string(blockId) +
-                        "\n   Start: " + std::to_string(start) +
-                        "\n   End: " + std::to_string(end) +
-                        "\n   Heat: " + std::to_string(heat) +
-                        "\n   nextAddress: " + std::to_string(nextAddress) +
-                        "\n   Instructions (" +
-                        std::to_string(instructions.size()) + "):";
-      for (int i = 0; i < instructions.size(); i++) {
-        str += "\n      " + instructions[i].toString();
-      }
-      str += "\nEnd BasicBlock\n";
-      return str;
-    }
-  };
-
-  BasicBlock *currentBasicBlock;
-
-  // cpp map for the basic blocks
-  std::map<int, BasicBlock *> basicBlocks;
+  JIT *jit = nullptr;
 
   // Return a std::string for a string or symbol oop
   std::string stringFromObject(int strOop);

@@ -27,11 +27,11 @@
 
 #include "interpreter.h"
 #include "bitblt.h"
+#include "jit.h"
 #include "oops.h"
 #include <cassert>
 #include <cmath>
 #include <cstdint>
-#include <cstdio>
 #include <cstdlib>
 #include <iostream>
 #include <limits>
@@ -53,9 +53,17 @@ Interpreter::Interpreter(IHardwareAbstractionLayer *halInterface,
 {
 }
 
+#define JIT_ENABLED
+
 bool Interpreter::init() {
   initializeMethodCache();
   semaphoreIndex = -1;
+
+#ifdef JIT_ENABLED
+  jit = new JIT(1000);
+  jit->startBasicBlock(instructionPointer);
+#endif
+
   if (!memory.loadSnapshot(fileSystem, hal->get_image_name()))
     return false;
   /*
@@ -702,10 +710,14 @@ void Interpreter::fetchContextRegisters() {
     homeContext = activeContext;
   receiver = memory.fetchPointer_ofObject(ReceiverIndex, homeContext);
   method = memory.fetchPointer_ofObject(MethodIndex, homeContext);
+  int oldIP = instructionPointer;
   instructionPointer = instructionPointerOfContext(activeContext) - 1;
-  if (jitEnabled && currentBasicBlock != nullptr) {
-    currentBasicBlock->start = instructionPointer + 1;
-  }
+
+#ifdef JIT_ENABLED
+  /* std::cout << "JIT: Return: " << instructionPointer << std::endl; */
+  jit->endBasicBlock(oldIP, instructionPointer);
+#endif // JIT_ENABLED
+
   stackPointer = stackPointerOfContext(activeContext) + TempFrameStart - 1;
 }
 
@@ -1322,10 +1334,11 @@ bool Interpreter::lookupMethodInClass(int cls) {
 
 // returnBytecode
 void Interpreter::returnBytecode() {
-  std::cout << "RETURN STATEMENT, Block is: " << currentBasicBlock->blockId
-            << " Instr Len is " << currentBasicBlock->instructions.size()
-            << std::endl;
-
+  /* std::cout << "RETURN STATEMENT, Block is: " << currentBasicBlock->blockId
+   */
+  /*           << " Instr Len is " << currentBasicBlock->instructions.size() */
+  /*           << std::endl; */
+  /**/
   /* "source"
        currentBytecode = 120
                ifTrue: [^self returnValue: receiver
@@ -1409,29 +1422,24 @@ void Interpreter::returnToActiveContext(int aContext) {
 void Interpreter::returnValue_to(int resultPointer, int contextPointer) {
   int sendersIP;
 
-  if (jitEnabled) {
-    endBasicBlock(instructionPointer);
-  } else {
-    std::cout << "JIT IS NOT ENABLED, WHAT THE FUCK?!" << std::endl;
-  }
   /* "source"
-       contextPointer = NilPointer
-               ifTrue: [self push: activeContext.
-                       self push: resultPointer.
-                       ^self sendSelector: CannotReturnSelector
-                               argumentCount: 1].
-       sendersIP <- memory fetchPointer: InstructionPointerIndex
-                               ofObject: contextPointer.
-       sendersIP = NilPointer
-               ifTrue: [self push: activeContext.
-                       self push: resultPointer.
-                       ^self sendSelector: CannotReturnSelector
-                               argumentCount: 1].
-       memory increaseReferencesTo: resultPointer.
-       self returnToActiveContext: contextPointer.
-       self push: resultPointer.
-       memory decreaseReferencesTo: resultPointer
-  */
+     contextPointer = NilPointer
+             ifTrue: [self push: activeContext.
+                     self push: resultPointer.
+                     ^self sendSelector: CannotReturnSelector
+                             argumentCount: 1].
+     sendersIP <- memory fetchPointer: InstructionPointerIndex
+                             ofObject: contextPointer.
+     sendersIP = NilPointer
+             ifTrue: [self push: activeContext.
+                     self push: resultPointer.
+                     ^self sendSelector: CannotReturnSelector
+                             argumentCount: 1].
+     memory increaseReferencesTo: resultPointer.
+     self returnToActiveContext: contextPointer.
+     self push: resultPointer.
+     memory decreaseReferencesTo: resultPointer
+*/
   if (contextPointer == NilPointer) {
     push(activeContext);
     push(resultPointer);
@@ -4271,31 +4279,13 @@ void Interpreter::dispatchOnThisBytecode() {
        (currentBytecode between: 176 and: 255) ifTrue: [^self sendBytecode]
   */
 
-  if (jitEnabled) {
-    if (basicBlockId == 0) {
-      // there is no basic block yet, hence we are probably on the first
-      // instruction
-      // -> start a new basic block
-      std::cout << "Creating new first basic block at instructionPointer: "
-                << instructionPointer << std::endl;
-      currentBasicBlock =
-          (struct BasicBlock *)malloc(sizeof(struct BasicBlock));
-      currentBasicBlock->blockId = basicBlockId;
-      currentBasicBlock->start = instructionPointer;
-      currentBasicBlock->heat = 1;
-      currentBasicBlock->end = -1;
-      currentBasicBlock->hasEnded = false;
-      currentBasicBlock->compiled = false;
-      currentBasicBlock->instructions = std::vector<Instruction>();
-
-      basicBlockId++;
-    }
-
-    if (!currentBasicBlock->hasEnded) {
-      currentBasicBlock->instructions.push_back(Instruction{
-          currentBytecode, getInstructionDescription(currentBytecode)});
-    }
+#ifdef JIT_ENABLED
+  if (jit->currentBasicBlock->hasEnded == false) {
+    jit->currentBasicBlock->instructions.push_back(
+        Instruction{currentBytecode, instructionPointer,
+                    getInstructionDescription(currentBytecode)});
   }
+#endif
 
   if (between_and(currentBytecode, 0, 119)) {
     stackBytecode();
@@ -4703,9 +4693,9 @@ void Interpreter::longConditionalJump() {
 
 // jumpBytecode
 void Interpreter::jumpBytecode() {
-  std::cout << "JUMP STATEMENT, Block is: " << currentBasicBlock->blockId
-            << " Instr Len is " << currentBasicBlock->instructions.size()
-            << std::endl;
+  /* std::cout << "JUMP STATEMENT, Block is: " << currentBasicBlock->blockId */
+  /*           << " Instr Len is " << currentBasicBlock->instructions.size() */
+  /*           << std::endl; */
   /* "source"
        (currentBytecode between: 144 and: 151)
                ifTrue: [^self shortUnconditionalJump].
