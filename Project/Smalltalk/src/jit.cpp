@@ -7,15 +7,16 @@ JIT::JIT(int threshold) : jitThreshold(threshold) {
 }
 
 void JIT::startBasicBlock(int startPC) {
-  /* std::cout << "Starting basic block at " << startPC << std::endl; */
   if (this->basicBlocks.find(startPC) != this->basicBlocks.end()) {
     BasicBlock *existing = JIT::basicBlocks[startPC];
+    std::cout << "Basic block at " << startPC << " already exists with id "
+              << existing->blockId << std::endl;
     existing->heat++;
 
     /* std::cout << "Basic block already exists: " << existing->toString() */
     /*           << std::endl; */
 
-    JIT::setCurrentBasicBlock(existing);
+    setCurrentBasicBlock(existing);
 
     if (existing->heat >= JIT::jitThreshold && existing->compiled == false) {
       existing->compiled = true;
@@ -24,22 +25,29 @@ void JIT::startBasicBlock(int startPC) {
       // TODO: compile the basic block
       // JIT::compileBasicBlock(existing);
     }
-    return;
+  } else {
+    JIT::blockID++;
+    std::cout << "Starting new basic block " << JIT::blockID << " at "
+              << startPC << std::endl;
+    BasicBlock *bb = new BasicBlock(JIT::blockID, startPC);
+    JIT::setCurrentBasicBlock(bb);
   }
-
-  JIT::blockID++;
-  BasicBlock *bb = new BasicBlock(JIT::blockID, startPC);
-  JIT::setCurrentBasicBlock(bb);
 }
 
 void JIT::endBasicBlock(int currentPC, int nextAddress) {
-  /* std::cout << "Ending basicblock " << currentBasicBlock->blockId <<
-   * std::endl; */
+  std::cout << "Ending basicblock " << currentBasicBlock->blockId
+            << "\n CurrentIC: " << currentPC
+            << "\n Instructions: " << currentBasicBlock->instructions.size()
+            << "\n Next: " << nextAddress << std::endl;
 
   this->currentBasicBlock->end = currentPC;
   this->currentBasicBlock->nextAddress = nextAddress;
   this->currentBasicBlock->hasEnded = true;
-  this->basicBlocks[currentBasicBlock->start] = currentBasicBlock;
+  /* this->basicBlocks[currentBasicBlock->start] = currentBasicBlock; */
+  this->basicBlocks.insert(std::pair<int, BasicBlock *>(
+      currentBasicBlock->start, currentBasicBlock));
+  std::cout << "BasicBlocks has now " << this->basicBlocks.size() << " elements"
+            << std::endl;
 
   JIT::startBasicBlock(nextAddress);
 }

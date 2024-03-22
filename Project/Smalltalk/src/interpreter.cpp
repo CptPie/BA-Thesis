@@ -61,7 +61,7 @@ bool Interpreter::init() {
 
 #ifdef JIT_ENABLED
   jit = new JIT(1000);
-  jit->startBasicBlock(instructionPointer);
+  jit->startBasicBlock(0);
 #endif
 
   if (!memory.loadSnapshot(fileSystem, hal->get_image_name()))
