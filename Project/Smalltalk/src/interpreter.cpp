@@ -61,7 +61,7 @@ bool Interpreter::init() {
 
 #ifdef JIT_ENABLED
   jit = new JIT(1000);
-  jit->startBasicBlock(0);
+  jit->startBasicBlock(currentLocation());
 #endif
 
   if (!memory.loadSnapshot(fileSystem, hal->get_image_name()))
@@ -703,19 +703,19 @@ void Interpreter::fetchContextRegisters() {
      - 1. stackPointer <- (self stackPointerOfContext: activeContext) +
      TempFrameStart - 1
   */
-
+  Location *current = currentLocation();
   if (isBlockContext(activeContext))
     homeContext = memory.fetchPointer_ofObject(HomeIndex, activeContext);
   else
     homeContext = activeContext;
   receiver = memory.fetchPointer_ofObject(ReceiverIndex, homeContext);
   method = memory.fetchPointer_ofObject(MethodIndex, homeContext);
-  int oldIP = instructionPointer;
   instructionPointer = instructionPointerOfContext(activeContext) - 1;
+  Location *newLoc = currentLocation();
 
 #ifdef JIT_ENABLED
   /* std::cout << "JIT: Return: " << instructionPointer << std::endl; */
-  jit->endBasicBlock(oldIP, instructionPointer);
+  jit->endBasicBlock(current, newLoc);
 #endif // JIT_ENABLED
 
   stackPointer = stackPointerOfContext(activeContext) + TempFrameStart - 1;
@@ -4278,6 +4278,12 @@ void Interpreter::dispatchOnThisBytecode() {
        (currentBytecode between: 144 and: 175) ifTrue: [^self jumpBytecode].
        (currentBytecode between: 176 and: 255) ifTrue: [^self sendBytecode]
   */
+
+  /* std::cout << "Active Context: " << activeContext */
+  /*           << " Home Context: " << homeContext << " Method " << method */
+  /*           << " IP " << instructionPointer << " CurrentBytecode " */
+  /*           << currentBytecode << " - " */
+  /*           << getInstructionDescription(currentBytecode) << std::endl; */
 
 #ifdef JIT_ENABLED
   if (jit->currentBasicBlock->hasEnded == false) {

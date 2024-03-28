@@ -6,11 +6,20 @@ JIT::JIT(int threshold) : jitThreshold(threshold) {
   return;
 }
 
-void JIT::startBasicBlock(int startPC) {
-  if (this->basicBlocks.find(startPC) != this->basicBlocks.end()) {
-    BasicBlock *existing = JIT::basicBlocks[startPC];
-    std::cout << "Basic block at " << startPC << " already exists with id "
-              << existing->blockId << std::endl;
+void JIT::startBasicBlock(Location *start) {
+  std::cout << "Looking for Location: " << start->toString() << std::endl;
+  if (!basicBlocks.empty()) {
+    std::cout << "BasicBlocks has these entries: " << std::endl;
+    for (std::map<Location *, BasicBlock *>::iterator it = basicBlocks.begin();
+         it != basicBlocks.end(); ++it) {
+      std::cout << "  " << it->first->toString() << std::endl;
+    }
+  }
+
+  if (this->basicBlocks.find(start) != this->basicBlocks.end()) {
+    BasicBlock *existing = JIT::basicBlocks[start];
+    std::cout << "Basic block at " << start->toString()
+              << " already exists with id " << existing->blockId << std::endl;
     existing->heat++;
 
     /* std::cout << "Basic block already exists: " << existing->toString() */
@@ -28,26 +37,26 @@ void JIT::startBasicBlock(int startPC) {
   } else {
     JIT::blockID++;
     std::cout << "Starting new basic block " << JIT::blockID << " at "
-              << startPC << std::endl;
-    BasicBlock *bb = new BasicBlock(JIT::blockID, startPC);
+              << start->toString() << std::endl;
+    BasicBlock *bb = new BasicBlock(JIT::blockID, start);
     JIT::setCurrentBasicBlock(bb);
   }
 }
 
-void JIT::endBasicBlock(int currentPC, int nextAddress) {
+void JIT::endBasicBlock(Location *current, Location *next) {
   std::cout << "Ending basicblock " << currentBasicBlock->blockId
-            << "\n CurrentIC: " << currentPC
+            << "\n Current: " << current->toString()
             << "\n Instructions: " << currentBasicBlock->instructions.size()
-            << "\n Next: " << nextAddress << std::endl;
+            << "\n Next: " << next->toString() << std::endl;
 
-  this->currentBasicBlock->end = currentPC;
-  this->currentBasicBlock->nextAddress = nextAddress;
+  this->currentBasicBlock->end = current;
+  this->currentBasicBlock->next = next;
   this->currentBasicBlock->hasEnded = true;
   /* this->basicBlocks[currentBasicBlock->start] = currentBasicBlock; */
-  this->basicBlocks.insert(std::pair<int, BasicBlock *>(
+  this->basicBlocks.insert(std::pair<Location *, BasicBlock *>(
       currentBasicBlock->start, currentBasicBlock));
   std::cout << "BasicBlocks has now " << this->basicBlocks.size() << " elements"
             << std::endl;
 
-  JIT::startBasicBlock(nextAddress);
+  JIT::startBasicBlock(next);
 }
