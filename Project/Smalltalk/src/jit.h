@@ -26,24 +26,28 @@ struct Location {
     return std::to_string(ActiveContext) + ":" + std::to_string(Method) + ":" +
            std::to_string(InstructionPointer);
   }
+
+  bool operator==(const Location &other) const {
+    return ActiveContext == other.ActiveContext && Method == other.Method &&
+           InstructionPointer == other.InstructionPointer;
+  }
 };
 
 struct BasicBlock {
-  int blockId;     // unique id for the basic block
-  Location *start; // start IC of the basic block
-  Location *end;   // end IC of the basic block
-  bool hasEnded;   // has the block ended
-  int heat;        // number of times the block has been executed
-  bool compiled;   // has the block been compiled
-  Location *next;  // the next address after the block
+  int blockId;       // unique id for the basic block
+  std::string start; // start IC of the basic block
+  std::string end;   // end IC of the basic block
+  bool hasEnded;     // has the block ended
+  int heat;          // number of times the block has been executed
+  bool compiled;     // has the block been compiled
+  std::string next;  // the next address after the block
   std::vector<Instruction> instructions; // the instructions in the basic block
 
   std::string toString() {
     std::string str = "BasicBlock: " + std::to_string(blockId) +
-                      "\n   Start: " + start->toString() +
-                      "\n   End: " + end->toString() +
+                      "\n   Start: " + start + "\n   End: " + end +
                       "\n   Heat: " + std::to_string(heat) +
-                      "\n   next: " + next->toString() + "\n   Instructions (" +
+                      "\n   next: " + next + "\n   Instructions (" +
                       std::to_string(instructions.size()) + "):";
     for (int i = 0; i < instructions.size(); i++) {
       str += "\n      " + instructions[i].toString();
@@ -52,10 +56,10 @@ struct BasicBlock {
     return str;
   }
 
-  BasicBlock(int blockID, Location *start) {
+  BasicBlock(int blockID, std::string startLocation) {
     blockId = blockID;
-    start = start;
-    end = nullptr;
+    start = startLocation;
+    end = "";
     heat = 1;
     compiled = false;
     hasEnded = false;
@@ -67,12 +71,13 @@ class JIT {
 
 public:
   BasicBlock *currentBasicBlock{};
-  std::map<Location *, BasicBlock *> basicBlocks{};
+  /* std::map<Location *, BasicBlock *> basicBlocks{}; */
+  std::vector<BasicBlock *> basicBlockList{}; // list of basic blocks
 
   JIT(int threshold);
-  void startBasicBlock(Location *start); // start a new basic block
-  void endBasicBlock(Location *current,
-                     Location *next); // end the current basic block
+  void startBasicBlock(std::string start); // start a new basic block
+  void endBasicBlock(std::string current,
+                     std::string next); // end the current basic block
 
 private:
   int jitThreshold = 100; // default

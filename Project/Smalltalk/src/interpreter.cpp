@@ -703,7 +703,8 @@ void Interpreter::fetchContextRegisters() {
      - 1. stackPointer <- (self stackPointerOfContext: activeContext) +
      TempFrameStart - 1
   */
-  Location *current = currentLocation();
+  std::string current = currentLocation();
+
   if (isBlockContext(activeContext))
     homeContext = memory.fetchPointer_ofObject(HomeIndex, activeContext);
   else
@@ -711,7 +712,7 @@ void Interpreter::fetchContextRegisters() {
   receiver = memory.fetchPointer_ofObject(ReceiverIndex, homeContext);
   method = memory.fetchPointer_ofObject(MethodIndex, homeContext);
   instructionPointer = instructionPointerOfContext(activeContext) - 1;
-  Location *newLoc = currentLocation();
+  std::string newLoc = currentLocation();
 
 #ifdef JIT_ENABLED
   /* std::cout << "JIT: Return: " << instructionPointer << std::endl; */

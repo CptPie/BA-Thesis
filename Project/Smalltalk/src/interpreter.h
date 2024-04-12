@@ -1073,16 +1073,19 @@ private:
 
 #ifdef JIT_ENABLED
     /* std::cout << "JIT: Jump: " << instructionPointer << std::endl; */
-    Location next =
-        Location{activeContext, method, instructionPointer + offset};
-    jit->endBasicBlock(currentLocation(), &next);
+    std::string next = std::to_string(activeContext) + ":" +
+                       std::to_string(method) + ":" +
+                       std::to_string(instructionPointer + offset);
+
+    jit->endBasicBlock(currentLocation(), next);
 #endif
 
     instructionPointer = instructionPointer + offset;
   }
 
-  Location *currentLocation() {
-    return new Location{activeContext, method, instructionPointer};
+  std::string currentLocation() {
+    return std::to_string(activeContext) + ":" + std::to_string(method) + ":" +
+           std::to_string(instructionPointer);
   }
 
   std::string getInstructionDescription(int bytecode) {
