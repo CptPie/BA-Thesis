@@ -78,9 +78,12 @@ public:
   void startBasicBlock(std::string start); // start a new basic block
   void endBasicBlock(std::string current,
                      std::string next); // end the current basic block
+  void compileBasicBlock(BasicBlock *block);
+  void translateInstruction(Instruction inst);
+  bool isContextSwitchingInstruction(int bc);
 
 private:
-  int jitThreshold = 100; // default
+  int jitThreshold = 1000; // default
   int blockID = 0;
 
   void setCurrentBasicBlock(BasicBlock *cbb) { currentBasicBlock = cbb; }
