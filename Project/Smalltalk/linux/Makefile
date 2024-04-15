@@ -1,4 +1,4 @@
-CFLAGS	:=  -std=c++17 -O3 -ggdb
+CFLAGS	:=  -std=c++17 -O3 -ggdb -DDEBUG
 
 CC = g++ 
 SRC := ../src
