@@ -71,7 +71,7 @@ class JIT {
 
 public:
   BasicBlock *currentBasicBlock{};
-  /* std::map<Location *, BasicBlock *> basicBlocks{}; */
+  std::map<std::string, BasicBlock *> basicBlocks{};
   std::vector<BasicBlock *> basicBlockList{}; // list of basic blocks
 
   JIT(int threshold);
