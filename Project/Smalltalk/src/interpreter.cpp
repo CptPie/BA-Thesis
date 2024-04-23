@@ -3342,6 +3342,7 @@ void Interpreter::primitiveGreaterOrEqual() {
 
 // primitiveAdd
 void Interpreter::primitiveAdd() {
+
   int integerReceiver;
   int integerArgument;
   int integerResult = 0;
@@ -3358,6 +3359,20 @@ void Interpreter::primitiveAdd() {
   */
   integerArgument = popInteger();
   integerReceiver = popInteger();
+
+#ifdef JIT_ENABLED
+  // li t0 1
+  // lh t1 zero {intpointer}
+  // andi t1 1
+  // bne t1 t0 {offset}
+  // slr t1
+  // lh t2 zero {intpointer}
+  // andi t2 1
+  // bne t2 t0 {offset}
+  // slr t2
+  // add t1 t1 t2
+  // somehow store it on the stack
+#endif // JIT_ENABLED
 
   if (success()) {
     integerResult = integerReceiver + integerArgument;
