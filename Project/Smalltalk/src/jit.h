@@ -1,6 +1,7 @@
 #pragma once
 
 #include <iomanip>
+#include <keystone/keystone.h>
 #include <map>
 #include <string>
 #include <vector>
@@ -81,6 +82,12 @@ public:
   void compileBasicBlock(BasicBlock *block);
   void translateInstruction(Instruction inst);
   bool isContextSwitchingInstruction(int bc);
+
+  ks_engine *ks;
+  ks_err ksErr;
+  size_t ksCount;
+  unsigned char *ksEncode;
+  size_t ksSize;
 
 private:
   int jitThreshold = 1000; // default

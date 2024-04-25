@@ -1,5 +1,7 @@
 #include "jit.h"
+#include <cstdlib>
 #include <iostream>
+#include <keystone/keystone.h>
 #include <map>
 
 #ifdef DEBUG
@@ -12,6 +14,11 @@ JIT::JIT(int threshold) : jitThreshold(threshold) {
 #endif // DEBUG
   /* JIT::basicBlockList = std::vector<BasicBlock *>(); */
   JIT::basicBlocks = std::map<std::string, BasicBlock *>();
+  JIT::ksErr = ks_open(KS_ARCH_X86, KS_MODE_64, &ks);
+  if (JIT::ksErr != KS_ERR_OK) {
+    printf("ERROR: failed on ks_open(), quit\n");
+    exit(-1);
+  }
   return;
 }
 
