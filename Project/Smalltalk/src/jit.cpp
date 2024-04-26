@@ -147,6 +147,7 @@ bool JIT::isContextSwitchingInstruction(int bc) {
 
 std::string JIT::compileToMC(std::string inputASM) {
   const char *input = inputASM.c_str();
+  printf("%s\n", inputASM.c_str());
   if (ks_asm(JIT::ks, input, 0, &ksEncode, &ksSize, &ksCount) != KS_ERR_OK) {
     printf("ERROR: ks_asm() failed & count = %lu, error = %u\n", ksCount,
            ks_errno(ks));

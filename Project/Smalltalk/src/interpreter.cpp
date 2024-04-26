@@ -38,6 +38,7 @@
 #include <keystone/keystone.h>
 #include <limits>
 #include <ostream>
+#include <sstream>
 #include <string>
 
 inline bool between_and(int value, int min, int max) {
@@ -3363,19 +3364,31 @@ void Interpreter::primitiveAdd() {
   integerReceiver = popInteger();
 
 #ifdef JIT_ENABLED
-  /* printf("stack shenanigans"); */
   int stacktop1 = memory.fetchPointer_ofObject(stackPointer, activeContext);
-
   stackPointer--;
   int stacktop2 = memory.fetchPointer_ofObject(stackPointer, activeContext);
-
   stackPointer--;
+  stackPointer = stackPointer + 2; // undo our shenanigans, for now
 
-  stackPointer = stackPointer + 2; // undo our shenanigans
-  std::string jitASM = "lw t0, zero, 1; lw t1, zero, " +
-                       std::to_string(stacktop1) + "; andi t0, 1;";
-  /* printf("Compiling ADD %s", jitASM.c_str()); */
-  jit->compileToMC(jitASM);
+  int res;
+  std::stringstream ss;
+
+  ss << "li t0, 1;";
+  ss << "li t1, " << stacktop1 << ";";
+  ss << "andi t3, t1, 1;"; // check for the integer object class bit (lowest
+                           // bit = 1 => integer object)
+  ss << "bne t3, t0, 2;";  // TODO: replace 2 with rel jump target
+  ss << "srli t1, t1, 1;";
+  ss << "li t2, " << stacktop2 << ";";
+  ss << "andi t3, t2, 1;"; // check for the integer object class bit (lowest
+                           // bit = 1 => integer object)
+  ss << "bne t3, t0, 2;";
+  ss << "srli t2, t2, 1;";
+  ss << "add t1, t1, t2;";
+  /* ss << "sh t1, " << &res << ";"; */
+
+  jit->compileToMC(ss.str());
+
   // li t0 1
   // lh t1 zero {intpointer}
   // andi t1 1
