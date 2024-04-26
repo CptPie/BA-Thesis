@@ -7,7 +7,7 @@ SRC := ../src
 OBJS := objmemory.o bitblt.o main.o interpreter.o jit.o
 
 Smalltalk: $(OBJS) 
-	$(CC) -o $@ $^ $(SDL_FLAGS)	
+	$(CC) -o $@ $^ $(SDL_FLAGS)	$(KEYSTONE_LDFLAGS)
 
 main.o: $(SRC)/main.cpp
 	$(CC) $(CFLAGS) -c $(SRC)/main.cpp 

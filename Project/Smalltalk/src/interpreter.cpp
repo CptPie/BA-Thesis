@@ -32,6 +32,7 @@
 #include <cassert>
 #include <cmath>
 #include <cstdint>
+#include <cstdio>
 #include <cstdlib>
 #include <iostream>
 #include <keystone/keystone.h>
@@ -3362,6 +3363,19 @@ void Interpreter::primitiveAdd() {
   integerReceiver = popInteger();
 
 #ifdef JIT_ENABLED
+  /* printf("stack shenanigans"); */
+  int stacktop1 = memory.fetchPointer_ofObject(stackPointer, activeContext);
+
+  stackPointer--;
+  int stacktop2 = memory.fetchPointer_ofObject(stackPointer, activeContext);
+
+  stackPointer--;
+
+  stackPointer = stackPointer + 2; // undo our shenanigans
+  std::string jitASM = "lw t0, zero, 1; lw t1, zero, " +
+                       std::to_string(stacktop1) + "; andi t0, 1;";
+  /* printf("Compiling ADD %s", jitASM.c_str()); */
+  jit->compileToMC(jitASM);
   // li t0 1
   // lh t1 zero {intpointer}
   // andi t1 1

@@ -1,8 +1,11 @@
 #include "jit.h"
+#include <cstddef>
+#include <cstdio>
 #include <cstdlib>
 #include <iostream>
 #include <keystone/keystone.h>
 #include <map>
+#include <string>
 
 #ifdef DEBUG
 #include <iostream>
@@ -14,7 +17,13 @@ JIT::JIT(int threshold) : jitThreshold(threshold) {
 #endif // DEBUG
   /* JIT::basicBlockList = std::vector<BasicBlock *>(); */
   JIT::basicBlocks = std::map<std::string, BasicBlock *>();
-  JIT::ksErr = ks_open(KS_ARCH_X86, KS_MODE_64, &ks);
+
+  ks_engine *ks;
+
+  JIT::ksErr = ks_open(KS_ARCH_RISCV, KS_MODE_RISCV64, &ks);
+
+  JIT::ks = ks;
+
   if (JIT::ksErr != KS_ERR_OK) {
     printf("ERROR: failed on ks_open(), quit\n");
     exit(-1);
@@ -134,4 +143,20 @@ void JIT::translateInstruction(Instruction inst) {
 
 bool JIT::isContextSwitchingInstruction(int bc) {
   return ((bc >= 120 && bc <= 125) || (bc >= 144 && bc <= 175));
+}
+
+std::string JIT::compileToMC(std::string inputASM) {
+  const char *input = inputASM.c_str();
+  if (ks_asm(JIT::ks, input, 0, &ksEncode, &ksSize, &ksCount) != KS_ERR_OK) {
+    printf("ERROR: ks_asm() failed & count = %lu, error = %u\n", ksCount,
+           ks_errno(ks));
+    exit(-1);
+  }
+  size_t i;
+  printf("encoded bytes %s\n", std::to_string(ksSize).c_str());
+  for (i = 0; i < ksSize; i++) {
+    printf("%02x ", ksEncode[i]);
+  }
+  printf("\n");
+  return "";
 }

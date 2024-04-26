@@ -80,6 +80,7 @@ public:
   void endBasicBlock(std::string current,
                      std::string next); // end the current basic block
   void compileBasicBlock(BasicBlock *block);
+  std::string compileToMC(std::string inputASM);
   void translateInstruction(Instruction inst);
   bool isContextSwitchingInstruction(int bc);
 
