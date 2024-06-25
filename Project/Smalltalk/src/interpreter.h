@@ -85,6 +85,11 @@ public:
     return memory.fetchWord_ofObject(wordIndex, displayBits);
   }
 
+  std::string currentLocation() {
+    return std::to_string(activeContext) + ":" + std::to_string(method) + ":" +
+           std::to_string(instructionPointer);
+  }
+
 private:
   void error(const char *message);
 
@@ -1083,11 +1088,6 @@ private:
     instructionPointer = instructionPointer + offset;
   }
 
-  std::string currentLocation() {
-    return std::to_string(activeContext) + ":" + std::to_string(method) + ":" +
-           std::to_string(instructionPointer);
-  }
-
   std::string getInstructionDescription(int bytecode) {
     switch (bytecode) {
     case 0 ... 15:
@@ -1301,6 +1301,9 @@ private:
                            memory.fetchWord_ofObject(0, objectPointer);
     return *(float *)&uint32;
   }
+
+  void printContext();
+  void dumpStack();
 
   float popFloat();
 

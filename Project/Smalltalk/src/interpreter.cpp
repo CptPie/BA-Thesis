@@ -3360,31 +3360,52 @@ void Interpreter::primitiveAdd() {
                ifTrue: [self pushInteger: integerResult]
                ifFalse: [self unPop: 2]
   */
+  printf("Pre Ops\n");
+  dumpStack();
+
   integerArgument = popInteger();
+
   integerReceiver = popInteger();
 
-#ifdef JIT_ENABLED
-  int stacktop1 = memory.fetchPointer_ofObject(stackPointer, activeContext);
+  printf("After Ops\n");
+  dumpStack();
+
+  printf("Interpreter: %x + %x = %x\n", integerArgument, integerReceiver,
+         integerArgument + integerReceiver);
+
+#if 1
+  stackPointer += 2;
+
+  printf("After offset correction\n");
+  dumpStack();
+
+  volatile int16_t stacktop1 =
+      memory.fetchPointer_ofObject(stackPointer, activeContext);
+  stacktop1 = memory.integerValueOf(stacktop1);
+  printf("Comparison: %b vs %b\n", integerArgument, stacktop1);
   stackPointer--;
-  int stacktop2 = memory.fetchPointer_ofObject(stackPointer, activeContext);
+  volatile int16_t stacktop2 =
+      memory.fetchPointer_ofObject(stackPointer, activeContext);
+  stacktop2 = memory.integerValueOf(stacktop2);
+  printf("Comparison: %b vs %b\n", integerReceiver, stacktop2);
   stackPointer--;
   stackPointer = stackPointer + 2; // undo our shenanigans, for now
 
   int res;
   std::stringstream ss;
 
-  ss << "li t0, 1;";
-  ss << "li t1, " << stacktop1 << ";";
-  ss << "andi t3, t1, 1;"; // check for the integer object class bit (lowest
-                           // bit = 1 => integer object)
-  ss << "bne t3, t0, 2;";  // TODO: replace 2 with rel jump target
-  ss << "srli t1, t1, 1;";
-  ss << "li t2, " << stacktop2 << ";";
-  ss << "andi t3, t2, 1;"; // check for the integer object class bit (lowest
-                           // bit = 1 => integer object)
-  ss << "bne t3, t0, 2;";
-  ss << "srli t2, t2, 1;";
-  ss << "add t1, t1, t2;";
+  ss << "li t0, 1; ";
+  ss << "li t1, " << stacktop1 << "; ";
+  ss << "andi t3, t1, 1; "; // check for the integer object class bit (lowest
+                            // bit = 1 => integer object)
+  ss << "bne t3, t0, 2; ";  // TODO: replace 2 with rel jump target
+  ss << "srli t1, t1, 1; ";
+  ss << "li t2, " << stacktop2 << "; ";
+  ss << "andi t3, t2, 1; "; // check for the integer object class bit (lowest
+                            // bit = 1 => integer object)
+  ss << "bne t3, t0, 2; ";
+  ss << "srli t2, t2, 1; ";
+  ss << "add t1, t1, t2; ";
   /* ss << "sh t1, " << &res << ";"; */
 
   jit->compileToMC(ss.str());
@@ -5264,4 +5285,12 @@ float Interpreter::popFloat() {
   }
 
   return std::nanf("");
+}
+
+void Interpreter::printContext() { printf("%s\n", currentLocation().c_str()); }
+
+void Interpreter::dumpStack() {
+  for (int i = stackPointer; i > 0; i--) {
+    printf("%4d: %8x\n", i, memory.fetchPointer_ofObject(i, activeContext));
+  }
 }
