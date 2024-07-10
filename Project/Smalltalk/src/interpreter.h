@@ -1304,6 +1304,8 @@ private:
 
   void printContext();
   void dumpStack();
+  void dumpMem();
+  void hexDump(const char *desc, const void *addr, const int len, int perLine);
 
   float popFloat();
 

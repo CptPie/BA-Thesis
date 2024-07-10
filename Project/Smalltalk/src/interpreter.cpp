@@ -69,6 +69,9 @@ bool Interpreter::init() {
 
   if (!memory.loadSnapshot(fileSystem, hal->get_image_name()))
     return false;
+
+  dumpMem();
+
   /*
    When Smalltalk is started up, the initial active context is found through the
    scheduler's active Process. (G&R pg. 644)
@@ -3360,36 +3363,45 @@ void Interpreter::primitiveAdd() {
                ifTrue: [self pushInteger: integerResult]
                ifFalse: [self unPop: 2]
   */
-  printf("Pre Ops\n");
-  dumpStack();
 
   integerArgument = popInteger();
 
   integerReceiver = popInteger();
 
-  printf("After Ops\n");
-  dumpStack();
-
-  printf("Interpreter: %x + %x = %x\n", integerArgument, integerReceiver,
-         integerArgument + integerReceiver);
-
 #if 1
   stackPointer += 2;
 
-  printf("After offset correction\n");
+  printf("Initial Stack\n");
   dumpStack();
 
   volatile int16_t stacktop1 =
       memory.fetchPointer_ofObject(stackPointer, activeContext);
   stacktop1 = memory.integerValueOf(stacktop1);
-  printf("Comparison: %b vs %b\n", integerArgument, stacktop1);
+  printf("Sanity check stackTop1: %x (expected) vs %x (manual access)\n",
+         integerArgument, stacktop1);
   stackPointer--;
+
   volatile int16_t stacktop2 =
       memory.fetchPointer_ofObject(stackPointer, activeContext);
-  stacktop2 = memory.integerValueOf(stacktop2);
-  printf("Comparison: %b vs %b\n", integerReceiver, stacktop2);
+  uint16_t stacktop2_val = memory.integerValueOf(stacktop2);
+
+  // TODO: is this even the correct location ? does this really point to the
+  // memory? I believe it should, but who knows..
+  auto wm = memory.wordMemory.memory;
+  // TODO: this is obviously wrong, we access stuff thats not on the stack -
+  // need to reverifiy the calculations
+  volatile int16_t stacktop2_man =
+      wm[((wm[15][0 + activeContext]) >> (15 - 15)) &
+         ((1 << (15 - 12 + 1)) - 1)]
+        [wm[15][0 + activeContext] + 2 + stackPointer];
+  uint16_t stacktop2_man_val = memory.integerValueOf(stacktop2_man);
+  printf("ST2 comparison: %x (func) vs %x (man)\n", stacktop2, stacktop2_man);
+  printf("ST2 comparison (values): %x (func) vs %x (man)\n", stacktop2_val,
+         stacktop2_man_val);
   stackPointer--;
-  stackPointer = stackPointer + 2; // undo our shenanigans, for now
+
+  printf("After custom ops\n");
+  dumpStack();
 
   int res;
   std::stringstream ss;
@@ -3400,7 +3412,7 @@ void Interpreter::primitiveAdd() {
                             // bit = 1 => integer object)
   ss << "bne t3, t0, 2; ";  // TODO: replace 2 with rel jump target
   ss << "srli t1, t1, 1; ";
-  ss << "li t2, " << stacktop2 << "; ";
+  // ss << "li t2, " << stacktop2 << "; ";
   ss << "andi t3, t2, 1; "; // check for the integer object class bit (lowest
                             // bit = 1 => integer object)
   ss << "bne t3, t0, 2; ";
@@ -5290,7 +5302,83 @@ float Interpreter::popFloat() {
 void Interpreter::printContext() { printf("%s\n", currentLocation().c_str()); }
 
 void Interpreter::dumpStack() {
+  printf(" SP     Value   IntValue\n");
   for (int i = stackPointer; i > 0; i--) {
-    printf("%4d: %8x\n", i, memory.fetchPointer_ofObject(i, activeContext));
+    uint16_t value = memory.fetchPointer_ofObject(i, activeContext);
+    printf("%4d:   %4x     %4x\n", i, value,
+           uint16_t(memory.integerValueOf(value)));
   }
+}
+
+void Interpreter::dumpMem() {
+  hexDump("Memory", memory.wordMemory.memory, 16 * 65536, 16);
+  printf("\n");
+}
+
+void Interpreter::hexDump(const char *desc, const void *addr, const int len,
+                          int perLine) {
+  // Silently ignore silly per-line values.
+
+  if (perLine < 4 || perLine > 64)
+    perLine = 16;
+
+  int i;
+  unsigned char buff[perLine + 1];
+  const unsigned char *pc = (const unsigned char *)addr;
+
+  // Output description if given.
+
+  if (desc != NULL)
+    printf("%s:\n", desc);
+
+  // Length checks.
+
+  if (len == 0) {
+    printf("  ZERO LENGTH\n");
+    return;
+  }
+  if (len < 0) {
+    printf("  NEGATIVE LENGTH: %d\n", len);
+    return;
+  }
+
+  // Process every byte in the data.
+
+  for (i = 0; i < len; i++) {
+    // Multiple of perLine means new or first line (with line offset).
+
+    if ((i % perLine) == 0) {
+      // Only print previous-line ASCII buffer for lines beyond first.
+
+      if (i != 0)
+        printf("  %s\n", buff);
+
+      // Output the offset of current line.
+
+      printf("  %04x ", i);
+    }
+
+    // Now the hex code for the specific character.
+
+    printf(" %02x", pc[i]);
+
+    // And buffer a printable ASCII character for later.
+
+    if ((pc[i] < 0x20) || (pc[i] > 0x7e)) // isprint() may be better.
+      buff[i % perLine] = '.';
+    else
+      buff[i % perLine] = pc[i];
+    buff[(i % perLine) + 1] = '\0';
+  }
+
+  // Pad out last line if not exactly perLine characters.
+
+  while ((i % perLine) != 0) {
+    printf("   ");
+    i++;
+  }
+
+  // And print the final ASCII buffer.
+
+  printf("  %s\n", buff);
 }
