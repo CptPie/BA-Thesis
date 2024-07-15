@@ -70,8 +70,6 @@ bool Interpreter::init() {
   if (!memory.loadSnapshot(fileSystem, hal->get_image_name()))
     return false;
 
-  dumpMem();
-
   /*
    When Smalltalk is started up, the initial active context is found through the
    scheduler's active Process. (G&R pg. 644)
@@ -3371,6 +3369,8 @@ void Interpreter::primitiveAdd() {
 #if 1
   stackPointer += 2;
 
+  dumpMem();
+
   printf("Initial Stack\n");
   dumpStack();
 
@@ -3387,13 +3387,17 @@ void Interpreter::primitiveAdd() {
 
   // TODO: is this even the correct location ? does this really point to the
   // memory? I believe it should, but who knows..
+  // 2024-07-10 22:08 - the stack is in here, stack may start at 9fe3c
+  // 2024-07-10 22:17 - stack space is not consistent (which makes sense)
+  //                    it appears that stack is reliably located at 9fxxx?
   auto wm = memory.wordMemory.memory;
   // TODO: this is obviously wrong, we access stuff thats not on the stack -
   // need to reverifiy the calculations
-  volatile int16_t stacktop2_man =
-      wm[((wm[15][0 + activeContext]) >> (15 - 15)) &
-         ((1 << (15 - 12 + 1)) - 1)]
-        [wm[15][0 + activeContext] + 2 + stackPointer];
+  int16_t a =
+      ((wm[15][0 + activeContext]) >> (15 - 15)) & ((1 << (15 - 12 + 1)) - 1);
+  int16_t b = wm[15][0 + activeContext] + 2 + stackPointer;
+  printf("accessing wm[%d][%d]", a, b);
+  volatile int16_t stacktop2_man = wm[a][b];
   uint16_t stacktop2_man_val = memory.integerValueOf(stacktop2_man);
   printf("ST2 comparison: %x (func) vs %x (man)\n", stacktop2, stacktop2_man);
   printf("ST2 comparison (values): %x (func) vs %x (man)\n", stacktop2_val,
@@ -5311,8 +5315,30 @@ void Interpreter::dumpStack() {
 }
 
 void Interpreter::dumpMem() {
-  hexDump("Memory", memory.wordMemory.memory, 16 * 65536, 16);
-  printf("\n");
+
+  printf("Memory:\n");
+  char *buffer = new char[17];
+  for (int i = 0; i < 16; i++) {
+    for (int j = 0; j < 65536; j++) {
+      if (j % 16 == 0) {
+        std::fill(buffer, buffer + 17, 0);
+        printf("wm[%02x][%04x]: ", i, j);
+      }
+      uint8_t value = memory.wordMemory.memory[i][j];
+      buffer[j % 16] = value;
+      printf("%02x ", value);
+      if (j % 16 == 15) {
+        printf("  ");
+        for (int k = 0; k < 16; k++) {
+          printf("%c", isprint(buffer[k]) ? buffer[k] : '.');
+        }
+        printf("\n");
+      }
+    }
+  }
+
+  // hexDump("Memory", memory.wordMemory.memory, 16 * 65536, 16);
+  // printf("\n");
 }
 
 void Interpreter::hexDump(const char *desc, const void *addr, const int len,

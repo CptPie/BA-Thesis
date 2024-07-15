@@ -33,7 +33,7 @@ JIT::JIT(int threshold) : jitThreshold(threshold) {
 
 void JIT::startBasicBlock(std::string start) {
 #ifdef DEBUG
-  std::cout << "Looking for Location: " << start;
+  // std::cout << "Looking for Location: " << start;
 #endif // DEBUG
 
   if (basicBlocks.find(start) != this->basicBlocks.end()) {
