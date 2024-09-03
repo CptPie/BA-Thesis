@@ -24,6 +24,7 @@
 #include <QTimer>
 #include <QVector>
 #include <StObjectMemory2.h>
+#include <jit.h>
 
 namespace St {
 // This is a textbook implementation according to Blue Book (BB) part 4.
@@ -102,6 +103,7 @@ public:
   enum Point { XIndex = 0, YIndex = 1, ClassPointSize = 2 };
 
   Interpreter(QObject *p = 0);
+  JIT *jit = nullptr;
   void setOm(ObjectMemory2 *om);
   void interpret();
 protected slots:
@@ -319,6 +321,9 @@ protected:
   void primitiveTickWordsInto();
   void primitiveSignalAtTick();
   void primitiveAltoFile();
+
+  Location *currentLocation();
+
   static inline quint16 extractBits(quint8 from, quint8 to, quint16 of) {
     Q_ASSERT(from <= to && to <= 15);
     return (of >> (15 - to)) & ((1 << (to - from + 1)) - 1);
