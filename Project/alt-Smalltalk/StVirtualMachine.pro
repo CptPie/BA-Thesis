@@ -26,7 +26,7 @@ TEMPLATE = app
 
 INCLUDEPATH += ..
 
-DEFINES += ST_IMG_VIEWER_EMBEDDED ST_OBJECT_MEMORY=ObjectMemory2
+DEFINES += ST_IMG_VIEWER_EMBEDDED ST_OBJECT_MEMORY=ObjectMemory2 ST_JIT
 
 
 SOURCES +=\
@@ -34,19 +34,19 @@ SOURCES +=\
     StObjectMemory2.cpp \
     StVirtualMachine.cpp \
     StDisplay.cpp \
-    StImageViewer.cpp
+    StImageViewer.cpp \
+    jit.cpp
 
 HEADERS  += \
     StInterpreter.h \
     StObjectMemory2.h \
     StVirtualMachine.h \
     StDisplay.h \
-    StImageViewer.h
+    StImageViewer.h \
+    jit.h
 
 
-CONFIG(debug, debug|release) {
-        DEFINES += _DEBUG
-}
+CONFIG += force_debug_info
 
 !win32 {
     QMAKE_CXXFLAGS += -Wno-reorder -Wno-unused-parameter -Wno-unused-function -Wno-unused-variable

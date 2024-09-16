@@ -14,10 +14,9 @@ EQ            = =
 
 CC            = gcc
 CXX           = g++
-DEFINES       = -DST_IMG_VIEWER_EMBEDDED -DST_OBJECT_MEMORY=ObjectMemory2 -DQT_NO_DEBUG -DQT_WIDGETS_LIB -DQT_GUI_LIB -DQT_CORE_LIB
-KEYSTONEFLAGS = 
-CFLAGS        = -pipe -O2 -flto -fno-fat-lto-objects -Wall -Wextra -D_REENTRANT -fPIC -lkeystone -lstdc++ -lm $(DEFINES)
-CXXFLAGS      = -pipe -Wno-reorder -Wno-unused-parameter -Wno-unused-function -Wno-unused-variable -O2 -flto -fno-fat-lto-objects -Wall -Wextra -D_REENTRANT -fPIC -lkeystone -lstdc++ -lm $(DEFINES)
+DEFINES       = -DST_IMG_VIEWER_EMBEDDED -DST_OBJECT_MEMORY=ObjectMemory2 -DST_JIT -DQT_NO_DEBUG -DQT_WIDGETS_LIB -DQT_GUI_LIB -DQT_CORE_LIB
+CFLAGS        = -pipe  -g -flto -fno-fat-lto-objects -Wall -Wextra -D_REENTRANT -fPIC $(DEFINES)
+CXXFLAGS      = -pipe -Wno-reorder -Wno-unused-parameter -Wno-unused-function -Wno-unused-variable -g -flto -fno-fat-lto-objects -Wall -Wextra -D_REENTRANT -fPIC $(DEFINES)
 INCPATH       = -I. -I.. -I/usr/include/qt -I/usr/include/qt/QtWidgets -I/usr/include/qt/QtGui -I/usr/include/qt/QtCore -I. -I/usr/lib/qt/mkspecs/linux-g++
 QMAKE         = /usr/bin/qmake
 DEL_FILE      = rm -f
@@ -40,8 +39,8 @@ COMPRESS      = gzip -9f
 DISTNAME      = St80VirtualMachine1.0.0
 DISTDIR = /home/cptpie/Stuff/Uni/BA-thesis/Project/alt-Smalltalk/.tmp/St80VirtualMachine1.0.0
 LINK          = g++
-LFLAGS        = -Wl,-O1 -pipe -Wno-reorder -Wno-unused-parameter -Wno-unused-function -Wno-unused-variable -O2 -flto=16 -fno-fat-lto-objects -fuse-linker-plugin -fPIC
-LIBS          = $(SUBLIBS) /usr/lib/libQt5Widgets.so /usr/lib/libQt5Gui.so /usr/lib/libQt5Core.so -lGL -lpthread -lkeystone -lm
+LFLAGS        = -pipe -Wno-reorder -Wno-unused-parameter -Wno-unused-function -Wno-unused-variable -O2 -g -flto=16 -fno-fat-lto-objects -fuse-linker-plugin -fPIC
+LIBS          = $(SUBLIBS) /usr/lib/libQt5Widgets.so /usr/lib/libQt5Gui.so /usr/lib/libQt5Core.so -lGL -lpthread -lkeystone  
 AR            = gcc-ar cqs
 RANLIB        = 
 SED           = sed
@@ -57,21 +56,21 @@ SOURCES       = StInterpreter.cpp \
 		StObjectMemory2.cpp \
 		StVirtualMachine.cpp \
 		StDisplay.cpp \
-		StImageViewer.cpp qrc_StVirtualMachine.cpp \
+		StImageViewer.cpp \
+		jit.cpp qrc_StVirtualMachine.cpp \
 		moc_StInterpreter.cpp \
 		moc_StDisplay.cpp \
-		moc_StImageViewer.cpp \
-		jit.cpp
+		moc_StImageViewer.cpp
 OBJECTS       = StInterpreter.o \
 		StObjectMemory2.o \
 		StVirtualMachine.o \
 		StDisplay.o \
 		StImageViewer.o \
+		jit.o \
 		qrc_StVirtualMachine.o \
 		moc_StInterpreter.o \
 		moc_StDisplay.o \
-		moc_StImageViewer.o \
-		jit.o
+		moc_StImageViewer.o
 DIST          = /usr/lib/qt/mkspecs/features/spec_pre.prf \
 		/usr/lib/qt/mkspecs/common/unix.conf \
 		/usr/lib/qt/mkspecs/common/linux.conf \
@@ -206,6 +205,7 @@ DIST          = /usr/lib/qt/mkspecs/features/spec_pre.prf \
 		/usr/lib/qt/mkspecs/features/qt_config.prf \
 		/usr/lib/qt/mkspecs/linux-g++/qmake.conf \
 		/usr/lib/qt/mkspecs/features/spec_post.prf \
+		.qmake.stash \
 		/usr/lib/qt/mkspecs/features/exclusive_builds.prf \
 		/usr/lib/qt/mkspecs/features/toolchain.prf \
 		/usr/lib/qt/mkspecs/features/default_pre.prf \
@@ -231,11 +231,13 @@ DIST          = /usr/lib/qt/mkspecs/features/spec_pre.prf \
 		StObjectMemory2.h \
 		StVirtualMachine.h \
 		StDisplay.h \
-		StImageViewer.h StInterpreter.cpp \
+		StImageViewer.h \
+		jit.h StInterpreter.cpp \
 		StObjectMemory2.cpp \
 		StVirtualMachine.cpp \
 		StDisplay.cpp \
-		StImageViewer.cpp
+		StImageViewer.cpp \
+		jit.cpp
 QMAKE_TARGET  = St80VirtualMachine
 DESTDIR       = 
 TARGET        = St80VirtualMachine
@@ -381,6 +383,7 @@ Makefile: StVirtualMachine.pro /usr/lib/qt/mkspecs/linux-g++/qmake.conf /usr/lib
 		/usr/lib/qt/mkspecs/features/qt_config.prf \
 		/usr/lib/qt/mkspecs/linux-g++/qmake.conf \
 		/usr/lib/qt/mkspecs/features/spec_post.prf \
+		.qmake.stash \
 		/usr/lib/qt/mkspecs/features/exclusive_builds.prf \
 		/usr/lib/qt/mkspecs/features/toolchain.prf \
 		/usr/lib/qt/mkspecs/features/default_pre.prf \
@@ -539,6 +542,7 @@ Makefile: StVirtualMachine.pro /usr/lib/qt/mkspecs/linux-g++/qmake.conf /usr/lib
 /usr/lib/qt/mkspecs/features/qt_config.prf:
 /usr/lib/qt/mkspecs/linux-g++/qmake.conf:
 /usr/lib/qt/mkspecs/features/spec_post.prf:
+.qmake.stash:
 /usr/lib/qt/mkspecs/features/exclusive_builds.prf:
 /usr/lib/qt/mkspecs/features/toolchain.prf:
 /usr/lib/qt/mkspecs/features/default_pre.prf:
@@ -578,8 +582,8 @@ distdir: FORCE
 	$(COPY_FILE) --parents $(DIST) $(DISTDIR)/
 	$(COPY_FILE) --parents StVirtualMachine.qrc $(DISTDIR)/
 	$(COPY_FILE) --parents /usr/lib/qt/mkspecs/features/data/dummy.cpp $(DISTDIR)/
-	$(COPY_FILE) --parents StInterpreter.h StObjectMemory2.h StVirtualMachine.h StDisplay.h StImageViewer.h $(DISTDIR)/
-	$(COPY_FILE) --parents StInterpreter.cpp StObjectMemory2.cpp StVirtualMachine.cpp StDisplay.cpp StImageViewer.cpp $(DISTDIR)/
+	$(COPY_FILE) --parents StInterpreter.h StObjectMemory2.h StVirtualMachine.h StDisplay.h StImageViewer.h jit.h $(DISTDIR)/
+	$(COPY_FILE) --parents StInterpreter.cpp StObjectMemory2.cpp StVirtualMachine.cpp StDisplay.cpp StImageViewer.cpp jit.cpp $(DISTDIR)/
 
 
 clean: compiler_clean 
@@ -615,7 +619,7 @@ compiler_moc_predefs_make_all: moc_predefs.h
 compiler_moc_predefs_clean:
 	-$(DEL_FILE) moc_predefs.h
 moc_predefs.h: /usr/lib/qt/mkspecs/features/data/dummy.cpp
-	g++ -pipe -Wno-reorder -Wno-unused-parameter -Wno-unused-function -Wno-unused-variable -O2 -flto -fno-fat-lto-objects -Wall -Wextra -dM -E -o moc_predefs.h /usr/lib/qt/mkspecs/features/data/dummy.cpp
+	g++ -pipe -Wno-reorder -Wno-unused-parameter -Wno-unused-function -Wno-unused-variable -O2 -g -flto -fno-fat-lto-objects -Wall -Wextra -dM -E -o moc_predefs.h /usr/lib/qt/mkspecs/features/data/dummy.cpp
 
 compiler_moc_header_make_all: moc_StInterpreter.cpp moc_StDisplay.cpp moc_StImageViewer.cpp
 compiler_moc_header_clean:
@@ -678,6 +682,9 @@ StImageViewer.o: StImageViewer.cpp StImageViewer.h \
 		StObjectMemory.h \
 		StObjectMemory2.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o StImageViewer.o StImageViewer.cpp
+
+jit.o: jit.cpp jit.h
+	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o jit.o jit.cpp
 
 qrc_StVirtualMachine.o: qrc_StVirtualMachine.cpp 
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o qrc_StVirtualMachine.o qrc_StVirtualMachine.cpp
