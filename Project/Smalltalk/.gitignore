@@ -31,4 +31,4 @@
 *.app
 /linux/Smalltalk
 
-/files/Smalltalk-80.changes
+./files/Smalltalk-80.changes
