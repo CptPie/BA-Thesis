@@ -1,5 +1,6 @@
 #include "jit.h"
 #include "keystone/keystone.h"
+#include <iostream>
 
 JIT::JIT(int threshold) : jitThreshold(threshold) {
   JIT::basicBlocks = std::map<Location *, BasicBlock *>();
@@ -20,14 +21,20 @@ JIT::JIT(int threshold) : jitThreshold(threshold) {
 
 void JIT::startBasicBlock(Location *start) {
   if (basicBlocks.find(start) != this->basicBlocks.end()) {
+    // This basicBlock already exists, raise its heat
     BasicBlock *bb = basicBlocks[start];
 
     bb->heat++;
 
     setCurrentBasicBlock(bb);
 
+    // the Block is a "hot" block, compile it if it hasn't already
     if (bb->heat > JIT::jitThreshold && bb->compiled == false) {
+
       bb->compiled = true;
+
+      // if the BasicBlock starts with a contextSwitch we can skip compiling
+      // since its just a handover
       if (!JIT::isContextSwitchingInstruction(bb->instructions[0].bytecode)) {
         JIT::compileBasicBlock(bb);
       }
@@ -114,4 +121,27 @@ bool JIT::isContextSwitchingInstruction(int bc) {
   return ((bc >= 120 && bc <= 125)    // Return statements
           || (bc >= 144 && bc <= 175) // (Pop and) Jumps
   );
+}
+
+void JIT::compileBasicBlock(BasicBlock *bb) {
+  for (Instruction inst : bb->instructions) {
+    translateInstruction(inst);
+  }
+}
+
+void JIT::translateInstruction(Instruction inst) {
+  int bc = inst.bytecode;
+  if (!isContextSwitchingInstruction(bc)) {
+    std::cerr << "Compiling BC: " << bc << getInstructionDescription(bc);
+  }
+}
+
+void JIT::endBasicBlock(Location *current, Location *next) {
+  if (!currentBasicBlock->hasEnded) {
+    this->currentBasicBlock->end = current;
+    this->currentBasicBlock->next = next;
+    this->currentBasicBlock->hasEnded = true;
+    this->basicBlocks[currentBasicBlock->start] = currentBasicBlock;
+  }
+  JIT::startBasicBlock(next);
 }

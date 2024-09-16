@@ -6,18 +6,6 @@
 #include <string>
 #include <vector>
 
-struct Instruction {
-  int bytecode;
-  int location;
-  std::string name;
-
-  std::string toString() {
-    std::stringstream stream;
-    stream << std::setw(3) << std::to_string(bytecode) << "  " << name;
-    return stream.str();
-  }
-};
-
 struct Location {
   int ActiveContext;
   int Method;
@@ -39,9 +27,21 @@ struct Location {
     InstructionPointer = instr;
   }
 
-  void offsetLocation(int offset) {
+  Location offsetLocation(int offset) {
     this->InstructionPointer = this->InstructionPointer + offset;
-    return;
+    return *this;
+  }
+};
+
+struct Instruction {
+  int bytecode;
+  Location *location;
+  std::string name;
+
+  std::string toString() {
+    std::stringstream stream;
+    stream << std::setw(3) << std::to_string(bytecode) << "  " << name;
+    return stream.str();
   }
 };
 

@@ -153,7 +153,8 @@ void Interpreter::interpret() {
   // SystemDictionary->install
 
   jit = new JIT(10000);
-  jit->startBasicBlock(currentLocation());
+  Location loc = currentLocation();
+  jit->startBasicBlock(&loc);
 
   while (Display::s_run) // && cycleNr < 121000 ) // trace2 < 500 trace3 < 2000
   {
@@ -500,8 +501,10 @@ void Interpreter::dispatchOnThisBytecode() {
   const quint8 b = currentBytecode;
 
   if (jit->currentBasicBlock->hasEnded == false) {
+    // FIXME: this is always a pointer to the same struct
+    Location loc = currentLocation();
     jit->currentBasicBlock->instructions.push_back(
-        Instruction{currentBytecode, instructionPointer,
+        Instruction{currentBytecode, &loc,
                     jit->getInstructionDescription(currentBytecode)});
   }
 
@@ -552,7 +555,8 @@ bool Interpreter::stackBytecode() {
 
 bool Interpreter::returnBytecode() {
   switch (currentBytecode) {
-  // "Return (receiver, true, false, nil) [%1] From Message").arg( b & 0x3 ), 1
+    // "Return (receiver, true, false, nil) [%1] From Message").arg( b & 0x3 ),
+    // 1
   // );
   case 120:
     returnValue(memory->getRegister(Receiver), sender());
@@ -962,12 +966,9 @@ bool Interpreter::sendLiteralSelectorBytecode() {
 }
 
 void Interpreter::jump(qint32 offset) {
-#ifdef JIT
-  Location *curr = currentLocation();
-  Location *next = currentLocation();
-  next->offsetLocation(offset);
-  jit->endBasicBlock(curr, next);
-#endif
+  Location curr = currentLocation();
+  Location next = currentLocation().offsetLocation(offset);
+  jit->endBasicBlock(&curr, &next);
   instructionPointer += offset;
 }
 
@@ -1099,6 +1100,7 @@ void Interpreter::returnToActiveContext(Interpreter::OOP aContext) {
   fetchContextRegisters();
 }
 
+// TODO: trigger endBasicBlock here as well
 void Interpreter::returnValue(Interpreter::OOP resultPointer,
                               Interpreter::OOP contextPointer) {
   OOP activeContext = memory->getRegister(ActiveContext);
@@ -3136,8 +3138,8 @@ void Interpreter::primitiveTimesTwoPower() {
   primitiveFail(); // optional
 }
 
-Location *Interpreter::currentLocation() {
+Location Interpreter::currentLocation() {
   Location loc = Location(memory->getRegister(ActiveContext),
                           memory->getRegister(Method), instructionPointer);
-  return &loc;
+  return loc;
 };
