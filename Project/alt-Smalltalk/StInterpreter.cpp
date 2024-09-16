@@ -152,10 +152,8 @@ void Interpreter::interpret() {
   // top: BlockContext->newProcess, ControllManager->activeController:
   // SystemDictionary->install
 
-#ifdef JIT
   jit = new JIT(10000);
   jit->startBasicBlock(currentLocation());
-#endif
 
   while (Display::s_run) // && cycleNr < 121000 ) // trace2 < 500 trace3 < 2000
   {

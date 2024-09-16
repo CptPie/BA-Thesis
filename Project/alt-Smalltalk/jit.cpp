@@ -1,4 +1,5 @@
 #include "jit.h"
+#include "keystone/keystone.h"
 
 JIT::JIT(int threshold) : jitThreshold(threshold) {
   JIT::basicBlocks = std::map<Location *, BasicBlock *>();
@@ -107,3 +108,6 @@ std::string JIT::getInstructionDescription(int bytecode) {
     return "unknown";
   }
 }
+
+// TODO: implement properly
+bool JIT::isContextSwitchingInstruction(int bc) { return true; }
