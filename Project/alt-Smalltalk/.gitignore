@@ -1,3 +1,6 @@
 .cache/
 .qmake.stash
 St80VirtualMachine
+*.o
+moc_*
+qrc_*
