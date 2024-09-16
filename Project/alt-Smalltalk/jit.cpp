@@ -109,5 +109,9 @@ std::string JIT::getInstructionDescription(int bytecode) {
   }
 }
 
-// TODO: implement properly
-bool JIT::isContextSwitchingInstruction(int bc) { return true; }
+// TODO: investigate if the sends should also be added here
+bool JIT::isContextSwitchingInstruction(int bc) {
+  return ((bc >= 120 && bc <= 125)    // Return statements
+          || (bc >= 144 && bc <= 175) // (Pop and) Jumps
+  );
+}
