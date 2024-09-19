@@ -26,6 +26,7 @@
 #include <QPainter>
 #include <QVBoxLayout>
 #include <QtDebug>
+#include <cstdio>
 #include <math.h>
 using namespace St;
 
@@ -153,8 +154,8 @@ void Interpreter::interpret() {
   // SystemDictionary->install
 
   jit = new JIT(10000);
-  Location loc = currentLocation();
-  jit->startBasicBlock(&loc);
+  std::string loc = currentLocation();
+  jit->startBasicBlock(loc);
 
   while (Display::s_run) // && cycleNr < 121000 ) // trace2 < 500 trace3 < 2000
   {
@@ -501,13 +502,15 @@ void Interpreter::dispatchOnThisBytecode() {
   const quint8 b = currentBytecode;
 
   if (jit->currentBasicBlock->hasEnded == false) {
-    // FIXME: this is always a pointer to the same struct
-    Location loc = currentLocation();
-    jit->currentBasicBlock->instructions.push_back(
-        Instruction{currentBytecode, &loc,
-                    jit->getInstructionDescription(currentBytecode)});
+    std::string loc = currentLocation();
+    jit->currentBasicBlock->instructions.push_back(Instruction{
+        currentBytecode, loc, jit->getInstructionDescription(currentBytecode)});
   }
 
+  // TODO: Essentially we want to break up BasicBlocks on everything apart from
+  // stack bytecodes so on jumps, returns and sends...
+  // while it is rather trivial for jumps, returns and sends are a different
+  // story entirely since their target calculations are far more complex
   if ((b >= 0 && b <= 119) || (b >= 128 && b <= 130) || (b >= 135 && b <= 137))
     stackBytecode();
   else if (b >= 120 && b <= 127)
@@ -966,9 +969,11 @@ bool Interpreter::sendLiteralSelectorBytecode() {
 }
 
 void Interpreter::jump(qint32 offset) {
-  Location curr = currentLocation();
-  Location next = currentLocation().offsetLocation(offset);
-  jit->endBasicBlock(&curr, &next);
+  std::string curr = currentLocation();
+  char next[50];
+  sprintf(next, "%X:%X:%X", memory->getRegister(ActiveContext),
+          memory->getRegister(Method), instructionPointer + offset);
+  jit->endBasicBlock(curr, next);
   instructionPointer += offset;
 }
 
@@ -1100,7 +1105,6 @@ void Interpreter::returnToActiveContext(Interpreter::OOP aContext) {
   fetchContextRegisters();
 }
 
-// TODO: trigger endBasicBlock here as well
 void Interpreter::returnValue(Interpreter::OOP resultPointer,
                               Interpreter::OOP contextPointer) {
   OOP activeContext = memory->getRegister(ActiveContext);
@@ -3138,8 +3142,9 @@ void Interpreter::primitiveTimesTwoPower() {
   primitiveFail(); // optional
 }
 
-Location Interpreter::currentLocation() {
-  Location loc = Location(memory->getRegister(ActiveContext),
-                          memory->getRegister(Method), instructionPointer);
-  return loc;
+std::string Interpreter::currentLocation() {
+  char buffer[50];
+  sprintf(buffer, "%X:%X:%X", memory->getRegister(ActiveContext),
+          memory->getRegister(Method), instructionPointer);
+  return buffer;
 };

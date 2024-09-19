@@ -322,7 +322,7 @@ protected:
   void primitiveSignalAtTick();
   void primitiveAltoFile();
 
-  Location currentLocation();
+  std::string currentLocation();
 
   static inline quint16 extractBits(quint8 from, quint8 to, quint16 of) {
     Q_ASSERT(from <= to && to <= 15);

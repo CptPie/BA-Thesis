@@ -3,7 +3,7 @@
 #include <iostream>
 
 JIT::JIT(int threshold) : jitThreshold(threshold) {
-  JIT::basicBlocks = std::map<Location *, BasicBlock *>();
+  JIT::basicBlocks = std::map<std::string, BasicBlock *>();
 
   ks_engine *ks;
 
@@ -19,7 +19,7 @@ JIT::JIT(int threshold) : jitThreshold(threshold) {
   return;
 }
 
-void JIT::startBasicBlock(Location *start) {
+void JIT::startBasicBlock(std::string start) {
   if (basicBlocks.find(start) != this->basicBlocks.end()) {
     // This basicBlock already exists, raise its heat
     BasicBlock *bb = basicBlocks[start];
@@ -136,7 +136,7 @@ void JIT::translateInstruction(Instruction inst) {
   }
 }
 
-void JIT::endBasicBlock(Location *current, Location *next) {
+void JIT::endBasicBlock(std::string current, std::string next) {
   if (!currentBasicBlock->hasEnded) {
     this->currentBasicBlock->end = current;
     this->currentBasicBlock->next = next;

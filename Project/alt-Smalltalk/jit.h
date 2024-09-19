@@ -35,7 +35,7 @@ struct Location {
 
 struct Instruction {
   int bytecode;
-  Location *location;
+  std::string location;
   std::string name;
 
   std::string toString() {
@@ -47,20 +47,19 @@ struct Instruction {
 
 struct BasicBlock {
   int blockId;
-  Location *start;
-  Location *end;
+  std::string start;
+  std::string end;
   bool hasEnded;
   int heat;
   bool compiled;
-  Location *next;
+  std::string next;
   std::vector<Instruction> instructions;
 
   std::string toString() {
     std::string str = "BasicBlock: " + std::to_string(blockId) +
-                      "\n   Start: " + start->toString() +
-                      "\n   End: " + end->toString() +
+                      "\n   Start: " + start + "\n   End: " + end +
                       "\n   Heat: " + std::to_string(heat) +
-                      "\n   next: " + next->toString() + "\n   Instructions (" +
+                      "\n   next: " + next + "\n   Instructions (" +
                       std::to_string(instructions.size()) + "):";
     for (size_t i = 0; i < instructions.size(); i++) {
       str += "\n      " + instructions[i].toString();
@@ -69,10 +68,10 @@ struct BasicBlock {
     return str;
   }
 
-  BasicBlock(int blockID, Location *startLocation) {
+  BasicBlock(int blockID, std::string startLocation) {
     blockId = blockID;
     start = startLocation;
-    end = nullptr;
+    end = "";
     heat = 1;
     compiled = false;
     hasEnded = false;
@@ -84,12 +83,12 @@ class JIT {
 
 public:
   BasicBlock *currentBasicBlock;
-  std::map<Location *, BasicBlock *> basicBlocks{};
+  std::map<std::string, BasicBlock *> basicBlocks{};
   std::vector<BasicBlock *> basicBlockList{};
 
   JIT(int threshold);
-  void startBasicBlock(Location *start);
-  void endBasicBlock(Location *currentLocation, Location *nextLocation);
+  void startBasicBlock(std::string start);
+  void endBasicBlock(std::string currentLocation, std::string nextLocation);
   void compileBasicBlock(BasicBlock *bb);
   std::string compileToMC(std::string inputASM);
   void translateInstruction(Instruction inst);
