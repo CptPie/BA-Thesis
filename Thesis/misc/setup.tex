@@ -160,7 +160,7 @@
 \etocsetlevel{section}{2}
 \etocsetlevel{subsection}{3}
 
-\etocsettocdepth{section} % set to subsection for adding subsections to toc (not recommended)
+\etocsettocdepth{subsection} % set to subsection for adding subsections to toc (not recommended)
 
 \newlength{\tocleft}
 \setlength{\tocleft}{2.5cm} % must be set to fit the innermargin defined in geometry (change only if you have changed the margins)
@@ -197,7 +197,9 @@
 \etocsetstyle{subsection}
    {\vspace{0ex}}
    {}
-   {\makebox[3em][l]{\etocnumber}\etocname\kern1em\etocpage\par}
+   {\makebox[0pt][r]{\textsc{\MakeTextLowercase\etocthenumber}\hspace{\tocsep}}%
+    \etocname\kern1em\etocpage\par%
+}
    {\addvspace{2ex}} % 2ex falls danach Section kommt
 
 \etocsettocstyle{\chapter*{\contentsname}

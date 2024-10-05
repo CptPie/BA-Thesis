@@ -1,0 +1,30 @@
+\chapter{Just in Time compilation}
+
+When discussing the design of programming languages, the topic of how a given program is actually executed is often a point of contention. 
+There are generally speaking two approaches on how this is implemented, either by compiling the source code ahead of the execution or by interpreting the instructions while running the source code and executing the result directly. 
+The former is called a 'compiled language' while the latter is referred to as an 'interpreted language'. 
+These approaches are not mutually exclusive and both have their benefits and problems. 
+
+Where compiled languages generally are more performant, they suffer in the field of portability since a compiler needs to be adapted to any given target platform. 
+
+On the other hand, interpreted languages tend to be slower than their compiled counterpart as each instruction needs to be translated on the fly and then executed. In turn, this translation stage generally provides a higher level of portability since the interpreted language automatically ports to the same platforms as the translation target. 
+
+Just in Time compilers (hereafter abbreviated to 'JIT compilers') blend these two paradigms together.
+
+\section{Basics of JIT compilers}
+A JIT compiler takes the direct translation from source code to machine bytecodes from a classic compiler and adds it to the interpretation loop of an interpreted language.
+This idea as is has several shortcomings. Major upon translating instructions to machine code over and over again. The obvious solution being caching does not really work in this case, since the compilation is just a table lookup in itself, so it won't benefit much from caching.
+To circumvent this problem while still keeping the caching approach in mind, JIT compilers partition the program into so called 'Basic Blocks', isolated sections of control flow which execute in a linear fashion. 
+A basic block starts when an instruction is jumped to and ends when jumping to an other instruction. 
+By separating the program into these blocks, we can cache the bytecodes for each block, avoiding having to compile a block over and over again. 
+Keeping all basic blocks and their respective machine code representations in memory may be practical on modern machines but can cause issues on machines with less memory such as embedded systems.
+As a solution to this, the JIT compiler keeps a running usage metric for each basic block, often called a 'heat' value. 
+Utilizing this, the compiler only translates basic blocks that are executed sufficiently enough to actually benefit from the compilation. 
+A threshold value for the heat of a basic block is usually configured. 
+Once this value is passed, the instructions within the basic block will get compiled to machine code.
+The basic block will get marked as compiled and when it gets executed again, the usual interpretation loop will be skipped in favor of the machine code which gets executed instead. 
+The heat threshold will prevent hogging memory for basic blocks which barely get executed. In the same vain this heat value can also get decremented with decreasing usage of a block, eventually resulting in discarding the cache for this block when a certain threshold is met. 
+
+\section{History of JIT compilers}
+
+\section{Existing JIT compilers for Smalltalk}
