@@ -26,5 +26,11 @@ The basic block will get marked as compiled and when it gets executed again, the
 The heat threshold will prevent hogging memory for basic blocks which barely get executed. In the same vain this heat value can also get decremented with decreasing usage of a block, eventually resulting in discarding the cache for this block when a certain threshold is met. 
 
 \section{History of JIT compilers}
+The idea of just in time compliation is not a new one. 
+Already in the early to mid 1960s work was put towards the idea of translating the program at runtime. [McCarthy 1960] 
+Following this, several programming languages like APL and BASIC started to explore aspects of just in time compilation.
+The aforementioned hot spot detection method was described by Hansen in 1974 and resulted in the development of Adaptive FORTRAN. [Hansen 1974]
+
+
 
 \section{Existing JIT compilers for Smalltalk}
