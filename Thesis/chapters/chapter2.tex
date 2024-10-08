@@ -1,24 +1,26 @@
-\chapter{Just in Time compilation}
+\chapter{Just in Time compilation}\label{cha:chapter2}
 
 When discussing the design of programming languages, the topic of how a given program is actually executed is often a point of contention. 
 There are generally speaking two approaches on how this is implemented, either by compiling the source code ahead of the execution or by interpreting the instructions while running the source code and executing the result directly. 
-The former is called a 'compiled language' while the latter is referred to as an 'interpreted language'. 
+The former is called a \enquote{compiled language} while the latter is referred to as an \enquote{interpreted language}. 
 These approaches are not mutually exclusive and both have their benefits and problems. 
 
 Where compiled languages generally are more performant, they suffer in the field of portability since a compiler needs to be adapted to any given target platform. 
 
-On the other hand, interpreted languages tend to be slower than their compiled counterpart as each instruction needs to be translated on the fly and then executed. In turn, this translation stage generally provides a higher level of portability since the interpreted language automatically ports to the same platforms as the translation target. 
+On the other hand, interpreted languages tend to be slower than their compiled counterpart as each instruction needs to be translated on the fly and then executed. In turn, this translation stage generally provides a higher level of portability since the interpreted language automatically ports to the same platforms as the translation target \cite{aycock2003}.
 
-Just in Time compilers (hereafter abbreviated to 'JIT compilers') blend these two paradigms together.
+Just-in-Time compilers (hereafter abbreviated to \enquote{JIT compilers}) blend these two paradigms together.
 
 \section{Basics of JIT compilers}
 A JIT compiler takes the direct translation from source code to machine bytecodes from a classic compiler and adds it to the interpretation loop of an interpreted language.
 This idea as is has several shortcomings. Major upon translating instructions to machine code over and over again. The obvious solution being caching does not really work in this case, since the compilation is just a table lookup in itself, so it won't benefit much from caching.
-To circumvent this problem while still keeping the caching approach in mind, JIT compilers partition the program into so called 'Basic Blocks', isolated sections of control flow which execute in a linear fashion. 
-A basic block starts when an instruction is jumped to and ends when jumping to an other instruction. 
+
+To circumvent this problem while still keeping the caching approach in mind, JIT compilers partition the program into so called \enquote{Basic Blocks}, isolated sections of control flow which execute in a linear fashion. 
+A Basic Block starts when an instruction is jumped to and ends when jumping to an other instruction. 
 By separating the program into these blocks, we can cache the bytecodes for each block, avoiding having to compile a block over and over again. 
 Keeping all basic blocks and their respective machine code representations in memory may be practical on modern machines but can cause issues on machines with less memory such as embedded systems.
-As a solution to this, the JIT compiler keeps a running usage metric for each basic block, often called a 'heat' value. 
+
+As a solution to this, the JIT compiler keeps a running usage metric for each basic block, often called a \enquote{heat} value. 
 Utilizing this, the compiler only translates basic blocks that are executed sufficiently enough to actually benefit from the compilation. 
 A threshold value for the heat of a basic block is usually configured. 
 Once this value is passed, the instructions within the basic block will get compiled to machine code.
@@ -26,11 +28,36 @@ The basic block will get marked as compiled and when it gets executed again, the
 The heat threshold will prevent hogging memory for basic blocks which barely get executed. In the same vain this heat value can also get decremented with decreasing usage of a block, eventually resulting in discarding the cache for this block when a certain threshold is met. 
 
 \section{History of JIT compilers}
-The idea of just in time compliation is not a new one. 
-Already in the early to mid 1960s work was put towards the idea of translating the program at runtime. [McCarthy 1960] 
-Following this, several programming languages like APL and BASIC started to explore aspects of just in time compilation.
-The aforementioned hot spot detection method was described by Hansen in 1974 and resulted in the development of Adaptive FORTRAN. [Hansen 1974]
+The following summary of the developments around Just-in-Time compilation are based on the work of John Aycock \cite{aycock2003}.
 
+The idea of just in time compilation is not a new one.
+Already in the early to mid 1960s work was put towards the idea of translating the program at runtime. These early works mostly concerned themself with the possibilities of compiling small parts of a program ahead of time (for example at program start), keeping them in memory and using them instead of the interpreting the respective instructions \cites{mccarthy1960, uom1964}.
 
+Mixing both native (compiled) and interpreted code, so called \enquote{mixed code}, as the basic idea for Just-in-time compilation was explored by Dakin and Poole as well as Dawson in 1973 \cites{Dakin1973, Dawson1973}.
+Here it is notable, that when talking about native or compiled code, the idea was to have these code sections pre-compiled and jumping to and from the interpreted to the compiled sections of the program. 
+Further refining the idea, it was proposed to incorporate transition to native code into the interpretation step \cite{Pittman1987}.
+
+Around the same time, a different school of thinking emerged, \enquote{throw away compilation}. Due to memory concerns arising from keeping both the compiled parts as well as the full interpreter in memory at runtime, Brown proposed to compile the native code dynamically at runtime \cite{Brown1976}.
+This would also allow to throw away compiled sections of the program when exhausting the memory of the machine. If needed later on, the thrown away sections could just be recompiled as needed. 
+
+The aforementioned hot spot detection method was described by Hansen and resulted in the development of Adaptive FORTRAN. 
+The resulting programs, while not always faster than when compiled and optimized, performed better overall \cite{Hansen1974}.
 
 \section{Existing JIT compilers for Smalltalk}
+Having introduced the concept of Just-in-Time compilation as well as given a partial summary of the historical developments in the field, it is now time to take a look at existing work of JIT compilation for the Smalltalk-80 programming language. 
+
+\subsection{Efficient Smalltalk}
+This version of Smalltalk was described in a paper by Deutsch and Schiffman in 1984 titled \enquote{Efficient Implementation of the Smalltalk-80 system} \cite{Deutsch1984}.
+In this paper, the authors proposed several areas of improvement compared to the original Smalltalk-80 implementation. 
+Among these changes was a dynamic translation from virtual machine instructions, so called \enquote{v-code} to machine native code or \enquote{n-code}. 
+Due to Smalltalk-80 being an entirely enclosed system, meaning that even the compiler is ran inside the virtual machine, a full emulation of the specified virtual machine must be created for this purpose. 
+This, while resulting in a lot of work, makes the following implementation of the Just-in-Time compiler very similar to the aforementioned approach which is usually based on a classic interpreter. In the same way, this emulation layer also has to parse the v-code instructions and translate them. 
+The authors compare the translation between v-code and n-code as similar to macro-expansion as a single v-code instruction may, depending on the underlying machine, expand to several n-code instructions. In fact in their paper a five times increase between v-code and n-code was noted.
+
+\subsection{Rochus Keller's LuaJIT implementation}
+LuaJIT is a just in time compiler for the Lua programming language. As the name implies, this JIT compiler can not directly work on the Smalltalk-80 system, rather it requires an implementation of the Smalltalk virtual machine in the Lua programming language.
+
+Keller did exactly this, he implemented a \enquote{by the blue book} (this phrase will be explained in \Cref{cha:chapter3}) virtual machine in Lua and thereafter utilized the existing capabilities of LuaJIT to archive a Just-in-Time implementation of Smalltalk \cite{Keller2021}.
+
+In the readme of the project, Keller noted that this LuaJIT implementation performs on a similar level as a C\+\+ based interpretation approach. 
+Further improvements to the implementation may be possible according to Keller, but would require to translate the Smalltalk instructions directly into Lua, so skipping the interpretation stage. While possible, this would require changing the Smalltalk virtual image as the image makes significant assumptions of the virtual machine which cannot easily replaced with a Lua implementation.
