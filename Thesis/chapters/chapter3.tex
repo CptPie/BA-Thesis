@@ -1,4 +1,31 @@
 \chapter{Smalltalk-80}\label{cha:chapter3}
+In this chapter a description of the Smalltalk-80 ecosystem will be given. 
+Unless stated otherwise, the main source of information is the language specification by Goldberg and Robson, also referred to as the \enquote{Bluebook} because of its blue cover \cite{bluebook1983}.
+
+Fundamentally Smalltalk-80 is an purely object orientated programming language, meaning that even primitive types such as numbers are represented by an object. 
+As usual with object orientation, inheritance is also possible.
+While this is certainly correct, narrowing the language down to object orientation is also partly misleading. 
+A big aspect of the design of Smalltalk-80 revolves around message passing. 
+When calling a procedure (a method or function in the terminology of Smalltalk-80), a message is sent to the class of the object the procedure is affecting, this is called the \enquote{receiver}.
+The receiver then looks up the corresponding functionality within its memory context or, if applicable, in the context of its parent class.
+After a successful lookup and execution of the procedure, the result will be passed back to the caller, the so called \enquote{sender}. 
+
+To illustrate this fundamental concept of sender, receiver and message passing consider the simple task of calculating the sum of 3 and 4. 
+The example is taken directly from Wolczko \cite{Wolczko1984}.
+
+In the syntax of Smalltalk-80, this is simply written as \stcode{3+4}.
+This is to be read from left to right, so on the number object \stcode{3} the \enquote{selector} \stcode{+} is invoked with the argument of the number object \stcode{4}.
+So the current context, the one which actually wants to get the result, sends a message with the selector \stcode{+} (standing for arithmetic addition) to the underlying class object for the receiver, in this case the number object \stcode{3}. 
+The selector \stcode{+} also takes one argument, which in this case is a reference to the object \stcode{4}. 
+
+To illustrate the following explanation further, see \Cref{fig:illust3+4}. The boxes in this figure represent the boundaries of a context, the arrows indicate direct or implicit communication between contexts.
+
+When receiving the message (1), the object \stcode{3} looks up the selector in its class definition (2). 
+The definition defines a second argument \stcode{aNumber}, the second number for the addition. The implicit call (3) fetches the reference of this argument (4) and forwards it to the context of \stcode{3} (5).
+Now the object \stcode{3} performs the defined procedure (in this case the arithmetic addition of 3 and 4). 
+As a result of this addition, a reference to the number object \stcode{7} is created (6) and returned to the calling context, the sender (7). 
+
+\image[h]{\textwidth}{illust3+4}{Illustration of the context switching and message passing of the procedure \stcode{3+4}}{illust3+4}
 
 \section{Structure of Instructions}
 
