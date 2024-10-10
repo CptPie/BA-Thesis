@@ -20,13 +20,35 @@ The selector \stcode{+} also takes one argument, which in this case is a referen
 
 To illustrate the following explanation further, see \Cref{fig:illust3+4}. The boxes in this figure represent the boundaries of a context, the arrows indicate direct or implicit communication between contexts.
 
-When receiving the message (1), the object \stcode{3} looks up the selector in its class definition (2). 
-The definition defines a second argument \stcode{aNumber}, the second number for the addition. The implicit call (3) fetches the reference of this argument (4) and forwards it to the context of \stcode{3} (5).
+When receiving the message (A), the object \stcode{3} looks up the selector in its class definition (B). 
+The definition defines a second argument \stcode{aNumber}, the second number for the addition. The implicit call (C) fetches the reference of this argument (D) and forwards it to the context of \stcode{3} (E).
 Now the object \stcode{3} performs the defined procedure (in this case the arithmetic addition of 3 and 4). 
-As a result of this addition, a reference to the number object \stcode{7} is created (6) and returned to the calling context, the sender (7). 
+As a result of this addition, a reference to the number object \stcode{7} is created (F) and returned to the calling context, the sender (G). 
 
 \image[h]{\textwidth}{illust3+4}{Illustration of the context switching and message passing of the procedure \stcode{3+4}}{illust3+4}
 
+The virtual machine operates like a classic stack machine. Each context has it's own stack. When switching contexts, the receivers stack is initialized with a reference to the sender. Instructions push and pop values to and from the active stack, store values in memory or are used to trigger the transmission of a message between contexts. 
+
 \section{Structure of Instructions}
+In total the Smalltalk-80 virtual machine recognizes 248 bytecode encodings. These bytecodes are encoded within one byte and numbered 0 through 255 with 8 encodings being left unused. 
+While this amount of bytecodes seems rather high, these are actually only 29 real instructions. 
+
+The vast majority of instructions utilizes parts of its bytecode for the argument to the instruction. For example the instruction to push a constant to the stack is only specified by the 3 highest bits in the form of \texttt{001}. The remaining 5 bits are used to encode the constant number that should be pushed to the stack. 
+
+Alternatively there are also instructions which are encoded utilizing the full 8 bit. These instructions take one or two complete bytes as input. In these cases the virtual machine just treats the following bytes as arguments to the instruction. 
+
+Lastly there are 3 long jump instructions (160 to 175) which apply both of these encodings.
+
+\Cref{fig:st-bytecodes} shows a table of all Smalltalk-80 instructions, their bytecode ranges and their encoding patterns.The table is taken directly from the language specification.
+
+\image[h]{\textwidth}{st-bytecodes}{Encoding table for the Smalltalk-80 bytecodes}{st-bytecodes}
+
+For the purpose of this thesis, we can simplify the categorization of these instructions into 4 groups: 
+\begin{itemize}
+  \item Stack bytecodes: These instructions directly modify the stack. 
+  \item Return bytecodes: These instructions are used to return from one context to the sender, they are mostly used to return the result from a message. 
+  \item Send bytecodes: The inverse of the return bytecodes, they send a message to a receivers selector.
+  \item Jump bytecodes: This groups together the 5 explicit jump instructions.
+\end{itemize}
 
 \section{Implementation of the interpreter}
