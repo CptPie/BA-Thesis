@@ -51,4 +51,12 @@ For the purpose of this thesis, we can simplify the categorization of these inst
   \item Jump bytecodes: This groups together the 5 explicit jump instructions.
 \end{itemize}
 
+Of these, the last 3 types are especially relevant for the implementation of a Just-in-time compiler. 
+This is because the return, send and jump instructions all result in a context switch, which in turn constitutes the end of a basic block.
+
 \section{Implementation of the interpreter}
+Beside the language specification the bluebook also describes the implementation details for a conforming Smalltalk-80 interpreter. 
+The described interpreter works, as one would expect. First all necessary variables are initialized and the existing saved memory is read from the image file.
+Following this, the interpretation loop is executed. The next instructions are looked up based on the instruction pointer, the method pointer and active context as shown in \Cref{fig:context}.
+\todo{figure for the context pointer stuff}
+After fetching the next instruction byte, the functionality of the instruction is looked up (the bluebook calls this stage \enquote{dispatching}) and the corresponding functionality is executed.
