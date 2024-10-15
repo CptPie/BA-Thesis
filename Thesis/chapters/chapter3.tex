@@ -55,8 +55,31 @@ Of these, the last 3 types are especially relevant for the implementation of a J
 This is because the return, send and jump instructions all result in a context switch, which in turn constitutes the end of a basic block.
 
 \section{Implementation of the interpreter}
-Beside the language specification the bluebook also describes the implementation details for a conforming Smalltalk-80 interpreter. 
-The described interpreter works, as one would expect. First all necessary variables are initialized and the existing saved memory is read from the image file.
-Following this, the interpretation loop is executed. The next instructions are looked up based on the instruction pointer, the method pointer and active context as shown in \Cref{fig:context}.
-\todo{figure for the context pointer stuff}
-After fetching the next instruction byte, the functionality of the instruction is looked up (the bluebook calls this stage \enquote{dispatching}) and the corresponding functionality is executed.
+Besides the language specification the bluebook also describes the implementation details for a conforming Smalltalk-80 interpreter. 
+
+As with any other interpreter, it is necessary to manage a state within for the interpretation of Smalltalk-80.
+The state consists of:
+\begin{itemize}
+  \item a pointer to the \emph{CompiledMethod}, whose bytecodes are executed, also called the method pointer
+  \item the location of the next bytecode within the \emph{CompiledMethod}, the instruction pointer 
+  \item the receiver and arguments of the message that invoked the \emph{CompiledMethod}
+  \item temporary variables assigned within the method 
+  \item the interpreter stack.
+\end{itemize}
+
+To understand how the virtual machine works it is useful to first establish the used phraseology. 
+
+\paragraph{Context}
+A context is a complete copy of the interpreter state at a specific point in time. Instructions may result in changes of the state, hence saving the existing state may be necessary depending on the effects of an instruction. 
+A good example of an instruction where the state needs to be saved is the sending of a message. 
+When the context is changed, the original context gets saved in memory and a pointer to the state is put on the stack, then the new context gets loaded into the interpreters state and execution continues. When the new context finishes, if applicable, the results are put on the stack of the original context and the original context is loaded back up.
+
+\paragraph{Location} 
+A location is the position within the interpreted code. In other languages this would correspond to line within a given file.
+Smalltalk-80 has no concept of files within the virtual machine, hence a more complex system is necessary to keep track of which instruction to interpret next.
+To fetch an instruction, the interpreter needs to process a triplet of variables which gets updated by the interpreter when necessary. 
+This triplet consists of the pointer to the active context, the pointer to the method that is currently executed and the instruction pointer within the method.
+
+Having found the next bytecode the description continues to the \enquote{dispatch} stage. The bytecodes value (the integer representation of the bytecode) is passed through a series of methods to finally arrive at the concrete implementation of the instruction. 
+
+
