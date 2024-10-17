@@ -1,5 +1,23 @@
-\chapter{RISC-V as a platform}
+\chapter{RISC-V as a platform}\label{cha:riscV}
 
-\section{Why RISC-V}
+One fundamental decision necessary for a Just-in-time compiler regards the platform that shall be supported. 
+While that does not massively influence the general design and in principle can be changed fairly easy, the target platform may still impose a few restrictions. 
+When talking about target platforms in the context of compilers, we are mainly talking about CPU architectures and more specifically their respective instruction set architectures (ISA). 
 
-\section{Differences to other ISA}
+The two fairly obvious choices would be the x86 architecture by Intel or the AArch64 ARM architecture due to the widespread usage of their respective chips. 
+Both of these would without any obvious problems be capable to handle the instructions specified in Smalltalk-80, as the virtual machine only assumes word sizes of 16 bit, which both of these architectures can support trivially. 
+
+At the beginning of this project, the targeted ISA has been AArch64. The reasoning behind this was due to the angle, from which this whole project started. 
+The initial idea was to take the crosstalk project by Michael Engel \cite{crosstalk}, which ported Dan Banays Smalltalk-80 implementation \cite{dbanayST} along with all dependencies to the Raspberry Pi, and implement a JIT compiler on top of the existing implementation.
+Since the Raspberry Pi boards, at least at the time, primarily use ARM chips, AArch64 was the obvious choice as a target platform. 
+
+While working on the project an other alternative emerged and gained my interest, the open ISA RISC-V.
+Working with RISC-V is very attractive for a few reasons. 
+Similar to AArch64 it is, as the name already implies, a reduced instruction set computer (RISC) architecture, which means that there are only a limited amount of instructions available.
+In the case of one of the most basic RISC-V ISA (rv32i) there are only 48 instructions defined.
+While this can result in the necessity of longer, more complex machine code for a given functionality, this compact instruction set architecture allows an easier understanding on what actually happens.
+At the same time I also took an operating systems course using RISC-V.
+This, tied with other university activities related to this ISA, reinforced the decision to eventually choose the RISC-V ISA over AArch64. 
+
+Realistically speaking, the choice of the target platform only really matters to this project in the final stage of the JIT compilers development, translating the interpreted instructions into machine code.
+At the point of transitioning from AArch64 to RISC-V, this stage was still quite some way away, hence the switch did not have huge influence in how this project eventually turned out.

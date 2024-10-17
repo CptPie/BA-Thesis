@@ -1,4 +1,4 @@
-\chapter{Just in Time compilation}\label{cha:chapter2}
+\chapter{Just in Time compilation}\label{cha:jit}
 
 When discussing the design of programming languages, the topic of how a given program is actually executed is often a point of contention. 
 There are generally speaking two approaches on how this is implemented, either by compiling the source code ahead of the execution or by interpreting the instructions while running the source code and executing the result directly. 
@@ -57,7 +57,7 @@ The authors compare the translation between v-code and n-code as similar to macr
 \subsection{Rochus Keller's LuaJIT implementation}
 LuaJIT is a just in time compiler for the Lua programming language. As the name implies, this JIT compiler can not directly work on the Smalltalk-80 system, rather it requires an implementation of the Smalltalk virtual machine in the Lua programming language.
 
-Keller did exactly this, he implemented a \enquote{by the blue book} (this phrase will be explained in \Cref{cha:chapter3}) virtual machine in Lua and thereafter utilized the existing capabilities of LuaJIT to archive a Just-in-Time implementation of Smalltalk \cite{Keller2021}.
+Keller did exactly this, he implemented a \enquote{by the blue book} (this phrase will be explained in \Cref{cha:smalltalk}) virtual machine in Lua and thereafter utilized the existing capabilities of LuaJIT to archive a Just-in-Time implementation of Smalltalk \cite{Keller2021}.
 
 In the readme of the project, Keller noted that this LuaJIT implementation performs on a similar level as a C\+\+ based interpretation approach. 
 Further improvements to the implementation may be possible according to Keller, but would require to translate the Smalltalk instructions directly into Lua, so skipping the interpretation stage. While possible, this would require changing the Smalltalk virtual image as the image makes significant assumptions of the virtual machine which cannot easily replaced with a Lua implementation.
