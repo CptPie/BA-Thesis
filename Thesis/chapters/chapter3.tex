@@ -4,8 +4,8 @@ Unless stated otherwise, the main source of information is the language specific
 
 Fundamentally Smalltalk-80 is an purely object orientated programming language, meaning that even primitive types such as numbers are represented by an object. 
 As usual with object orientation, inheritance is also possible.
-While this is certainly correct, narrowing the language down to object orientation is also partly misleading. 
-A big aspect of the design of Smalltalk-80 revolves around message passing. 
+While this is certainly correct, narrowing the language down to object orientation is also misleading. 
+A fundamental aspect of the design of Smalltalk-80 revolves around message passing. 
 When calling a procedure (a method or function in the terminology of Smalltalk-80), a message is sent to the class of the object the procedure is affecting, this is called the \enquote{receiver}.
 The receiver then looks up the corresponding functionality within its memory context or, if applicable, in the context of its parent class.
 After a successful lookup and execution of the procedure, the result will be passed back to the caller, the so called \enquote{sender}. 
@@ -27,7 +27,7 @@ As a result of this addition, a reference to the number object \stcode{7} is cre
 
 \image[h]{\textwidth}{illust3+4}{Illustration of the context switching and message passing of the procedure \stcode{3+4}}{illust3+4}
 
-The virtual machine operates like a classic stack machine. Each context has it's own stack. When switching contexts, the receivers stack is initialized with a reference to the sender. Instructions push and pop values to and from the active stack, store values in memory or are used to trigger the transmission of a message between contexts. 
+The virtual machine operates like a classic stack machine. Each context has its own stack. When switching contexts, the receiver's stack is initialized with a reference to the sender. Instructions push and pop values to and from the active stack, store values in memory or are used to trigger the transmission of a message between contexts. 
 
 \section{Structure of Instructions}
 In total the Smalltalk-80 virtual machine recognizes 248 bytecode encodings. These bytecodes are encoded within one byte and numbered 0 through 255 with 8 encodings being left unused. 
@@ -51,11 +51,29 @@ For the purpose of this thesis, we can simplify the categorization of these inst
   \item Jump bytecodes: This groups together the 5 explicit jump instructions.
 \end{itemize}
 
-Of these, the last 3 types are especially relevant for the implementation of a Just-in-time compiler. 
-This is because the return, send and jump instructions all result in a context switch, which in turn constitutes the end of a basic block.
+Of these, the last 3 types are especially relevant for the implementation of a \jit{} compiler. 
+This is because the return, send and jump instructions all result in a context switch, which in turn constitutes the end of a \bb{}.
 
 \section{Implementation of the interpreter}
 Besides the language specification the bluebook also describes the implementation details for a conforming Smalltalk-80 interpreter. 
+To understand how the virtual machine works it is useful to first establish the used terminology. 
+\todo{look at this again, there are leaps in logic/story telling}
+
+\paragraph{Context}
+A context is a complete copy of the interpreter state at a specific point in time. Instructions may result in changes of the state, hence saving the existing state may be necessary depending on the effects of an instruction. 
+A good example of an instruction where the state needs to be saved is the sending of a message. 
+When the context is changed, the original context gets saved in memory and a pointer to the state is put on the stack, then the new context gets loaded into the interpreter's state and execution continues. When the new context finishes, if applicable, the results are put on the stack of the original context and the original context is loaded back up.
+
+\paragraph{Location} 
+A location is the position within the interpreted code. In other languages this would correspond to line within a given file.
+Smalltalk-80 has no concept of files within the virtual machine, hence a more complex system is necessary to keep track of which instruction to interpret next.
+To fetch an instruction, the interpreter needs to process a triplet of variables which gets updated by the interpreter when necessary. 
+This triplet consists of the pointer to the active context, the pointer to the method that is currently executed and the instruction pointer within the method.
+
+\paragraph{CompiledMethod}
+Smalltalk-80 differentiates between the source code of a method and its compiled representation. In this context, \enquote{compiled} does not relate to the aforementioned translation to native machine code, rather to the addition to the currently running interpretation scope. As Smalltalk-80 is constantly self-evaluating its source code, once a method gets interpreted successfully it can be executed. This verified piece of code is then called \emph{CompiledMethod}.
+
+Having found the next bytecode the description continues to the \enquote{dispatch} stage. The bytecode's value (the integer representation of the bytecode) is passed through a series of methods to finally arrive at the concrete implementation of the instruction. 
 
 As with any other interpreter, it is necessary to manage a state within for the interpretation of Smalltalk-80.
 The state consists of:
@@ -66,20 +84,5 @@ The state consists of:
   \item temporary variables assigned within the method 
   \item the interpreter stack.
 \end{itemize}
-
-To understand how the virtual machine works it is useful to first establish the used phraseology. 
-
-\paragraph{Context}
-A context is a complete copy of the interpreter state at a specific point in time. Instructions may result in changes of the state, hence saving the existing state may be necessary depending on the effects of an instruction. 
-A good example of an instruction where the state needs to be saved is the sending of a message. 
-When the context is changed, the original context gets saved in memory and a pointer to the state is put on the stack, then the new context gets loaded into the interpreters state and execution continues. When the new context finishes, if applicable, the results are put on the stack of the original context and the original context is loaded back up.
-
-\paragraph{Location} 
-A location is the position within the interpreted code. In other languages this would correspond to line within a given file.
-Smalltalk-80 has no concept of files within the virtual machine, hence a more complex system is necessary to keep track of which instruction to interpret next.
-To fetch an instruction, the interpreter needs to process a triplet of variables which gets updated by the interpreter when necessary. 
-This triplet consists of the pointer to the active context, the pointer to the method that is currently executed and the instruction pointer within the method.
-
-Having found the next bytecode the description continues to the \enquote{dispatch} stage. The bytecodes value (the integer representation of the bytecode) is passed through a series of methods to finally arrive at the concrete implementation of the instruction. 
 
 
