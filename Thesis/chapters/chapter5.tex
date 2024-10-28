@@ -22,21 +22,21 @@ After translating, the interpreter loop continues as before, with one exception.
 \section{New classes and data structures}
 Several new classes and data structures were defined independently of the existing codebase to manage information necessary for the compilation process. This modular approach already proved vital during the project when switching from one interpreter implementation to the other. This section will give a brief summary of the purpose of each of these additions and the reasoning behind certain aspects.
 
-\subsection{The JIT class}
+\paragraph{The JIT class}
 On startup, variables necessary for the functionality of the interpreter are initialized by calling a function. Since this function is only executed once, on startup, this is also well suited to set up the necessary variables for the \jit{} compiler. 
 For this, a new class, called JIT, was created. The purpose of this class is to bundle all functionalities related to the JIT process in itself and provide scoping for the variables used. Its constructor is used to initialize the aforementioned variables. The only configurable variable for the \jit{} compiler is the heat threshold, that is, how often a \bb{} has to be executed to be eligible for compilation. This value is passed to the class by the constructor.
 This class keeps track of all identified \bbs{}, the configured heat level, and the \bb{} that contains the currently interpreted instruction.
 Since this class manages the majority of the logic for the JIT compiler, most newly created functions are members of this class. 
 
-\subsection{The location structure}
+\paragraph{The Location structure}
 As explained before in \Cref{cha:smalltalk}, the interpreted language does not have a concept of files. Every piece of source code is kept in memory, separated by context. 
 The Location structure was created to keep track of a position within the program. This structure saves the currently active context, the method context, and the instruction pointer within those
 
-\subsection{The Instruction structure}
+\paragraph{The Instruction structure}
 The purpose of this structure is to represent a single instruction in the program. 
 Each instruction contains information about where in the program flow it is located, its location value, the bytecode it represents, and a human-readable name for the instruction to ease debugging.
 
-\subsection{The BasicBlock structure}
+\paragraph{The BasicBlock structure}
 To manage the \bbs{} properly, this structure was introduced.
 The primary purpose of the \bb{} is to keep a list of instructions within it, as well as the block's heat value and its start and end locations. 
 The instruction list is necessary for the translation to machine bytecode as every instruction is translated individually. After translating the instruction, the resulting bytecode is added to the Basic Block's bytecode variable for later use. 

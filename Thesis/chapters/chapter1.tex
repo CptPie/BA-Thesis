@@ -1,1 +1,16 @@
 \chapter{Introduction}
+More and more programming languages pride themselves on their fast execution times. Of course, this is a desirable trait, both from a user's perspective and for improving nonfunctional requirements, like a program's energy consumption. 
+While this may be easier today, there were other aspects to focus on in the past. 
+One of these older languages, Smalltalk-80, focuses on user experience and the memory constraints of early systems.
+There is a way to improve this time aspect for older programming languages, \jit{} compilation.
+
+The goal of this thesis is to implement a \jit{} compiler for the Smalltalk-80 programming language.
+Smalltalk-80 is an exciting target for \jit{} compilation as it is, due to its age, not overly complex to understand.
+Similarly, \jit{} compilation itself is a rewarding topic to work on. When completed, the results of a successful implementation are easily noticeable to the user since the speedup in execution time is usually significant.
+
+The second chapter of this thesis introduces the concept of \jit{} compilation and provides the historical context of the field in general. It also discusses existing \jit{} implementations for Smalltalk-80. 
+\Cref{cha:smalltalk} summarizes the key aspects of the Smalltalk-80 language and its corresponding virtual machine architecture. 
+As a target platform, the RISC-V ISA is chosen. The reasons behind this choice are explained in \Cref{cha:riscV}.
+Having established the fundamentals of the design of the \jit{} compiler described in this thesis, \Cref{cha:impls} provides detailed descriptions of the design decisions taken and the problems which were encountered during the development. 
+\Cref{cha:conclusion} summarizes the results of this thesis and the lessons learned while working on the project. 
+Finally, \Cref{cha:futurework} points out which steps are necessary to complete a working \jit{} compiler as described in this thesis.
