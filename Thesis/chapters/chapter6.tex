@@ -1,1 +1,12 @@
-\chapter{Conclusion}
+\chapter{Conclusion and lessons learned}
+
+This project started as a relatively simple idea, taking an existing Smalltalk-80 interpreter and implementing a \jit{} compiler on top of the existing structure. 
+Applying what I learned during university classes, I was able to plan out a solid structure for the project and reliably identified \bbs{}.
+Since this project is also a thesis, it came with strict time constraints. The issues outlined in \Cref{cha:impls} regrettably resulted in an unsatisfying result at the end of the time frame provided.
+
+Smalltalk-80 remains an interesting aspect of the history of programming languages. I especially like its usage of message passing between contexts. This thesis sparked my interest in languages running within virtual machines and how to translate virtual machine instructions to native machine code. This is certainly a topic I will explore further in the future.
+
+Even though the goal of the thesis was not met, I am happy with the progress made and the lessons learned while working on this project. 
+I was able to gather a decent understanding of the inner workings of the Smalltalk-80 virtual machine and the Smalltalk language specification as a whole. Working on a historic programming language such as Smalltalk also allowed me to realize aspects of it in more modern languages and think critically about the design decisions taken in these programming languages.
+
+I believe that the work done during this thesis can still serve as a basis to complete a \jit{} compiler for one or both of the used implementations. I will expand on this in \Cref{cha:futurework}.

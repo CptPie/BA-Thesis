@@ -1,67 +1,69 @@
 \chapter{\jit{} compilation}\label{cha:jit}
 
-When discussing the design of programming languages, the topic of how a given program is actually executed is often a point of contention. 
-There are generally speaking two approaches on how this is implemented, either by compiling the source code ahead of the execution or by interpreting the instructions while running the source code and executing the result directly. 
+When discussing the design of programming languages, how a given program is executed is often a point of contention. 
+There are generally two approaches to implementing this: compiling the source code ahead of execution or interpreting the instructions while running the source code and executing the result directly.
 The former is called a \enquote{compiled language} while the latter is referred to as an \enquote{interpreted language}. 
-These approaches are not mutually exclusive and both have their benefits and problems. 
+These approaches are not mutually exclusive, and they have their own benefits and drawbacks. 
 
-Where compiled languages generally are more performant, they suffer in the field of portability since a compiler needs to be adapted to any given target platform. 
+While compiled languages generally are more performant, they suffer in the field of portability since a compiler needs to be adapted to any given target platform. 
 
-On the other hand, interpreted languages tend to be slower than their compiled counterpart as each instruction needs to be translated on the fly and then executed. In turn, this translation stage generally provides a higher level of portability since the interpreted language automatically ports to the same platforms as the translation target \cite{aycock2003}.
+On the other hand, interpreted languages tend to be slower than their compiled counterparts, as each instruction must be translated on the fly and executed.
+In turn, this translation stage generally provides a higher level of portability since the interpreted language automatically ports to the same platforms as the translation target \cite{aycock2003}.
 
 \jit{} compilers (hereafter abbreviated to \enquote{JIT compilers}) blend these two paradigms together.
 
 \section{Basics of JIT compilers}
 A JIT compiler takes the direct translation from source code to machine bytecodes from a classic compiler and adds it to the interpretation loop of an interpreted language.
-This idea as is has several shortcomings. Major upon those, is translating instructions to machine code repeatedly with no changes to the underlying result of the translation. 
-While caching will get rid of this issue, it also magnifies an other one. 
-Everything described up to this point is basically just a compiler that is executed at runtime rather than before running the program and instead of producing an executable, the machine code is kept in memory. 
-For small programs this approach may be feasible, but the larger a program gets, the more code sections get rarely, if ever, executed. Compiling those sections and keeping them in memory is a waste of time (needed for the translation) and memory (to keep the machine code in the cache).
+This idea has several shortcomings. One major one is translating instructions to machine code repeatedly with no changes to the underlying result of the translation
+While caching will mitigate this issue, it also magnifies an other one. 
+Everything described up to this point is basically just a compiler that is executed at runtime rather than before running the program. Instead of producing an executable, the machine code is kept in memory. 
+This approach may be feasible for small programs, but the more extensive a program gets, the more code sections are rarely executed.
+Compiling those sections and keeping them in memory wastes time (needed for the translation) and memory (to keep the machine code in the cache).
 
-To circumvent this problem while still keeping the caching approach in mind, JIT compilers partition the program into so called \enquote{\bbs{}}, isolated sections of control flow which execute in a linear fashion. 
+To circumvent this problem while still keeping the caching approach in mind, \jit{} compilers partition the program into so called \enquote{\bbs{}}, isolated sections of control flow which execute in a linear fashion. 
 A \bb{} starts when an instruction is a branch target and ends when jumping to an other instruction. 
-By separating the program into these blocks, we can cache the generated machine code corresponding to each \bb{}, avoiding having to compile a block over and over again. 
-Keeping all \bbs{} and their respective machine code representations in memory may be practical on modern machines but can cause issues on machines with less memory such as embedded systems.
-Additionally translating every identified \bb{} will unavoidably lead to a worse performance of the JIT compiler compared to a regular interpreter since the translation itself does take significant time. 
+By separating the program into these blocks, we can cache the generated machine code corresponding to each \bb{}, avoiding having to compile a block repeatedly. 
+Keeping all \bbs{} and their respective machine code representations in memory may be practical on modern machines but can cause issues on machines with less memory, such as embedded systems.
+Additionally, translating every identified \bb{} will unavoidably lead to a worse performance of the \jit{} compiler compared to a regular interpreter since the translation itself does take significant time. 
 
 To reduce the memory and time overhead of the translation, the JIT compiler keeps a running usage metric for each \bb{}, often called a \enquote{heat} value. 
-Utilizing this, the compiler only translates \bbs{} that are executed sufficiently enough to actually benefit from the compilation. 
+Utilizing this, the compiler only translates \bbs{} that are executed sufficiently enough to benefit from the compilation and offset the time spend with the translation. 
 A threshold value for the heat of a \bb{} is usually configured. 
-Once this value is passed, the instructions within the \bb{} will get compiled to machine code.
-The \bb{} will get marked as compiled and when it gets executed again, the usual interpretation loop will be skipped in favor of the machine code which gets executed instead. 
-The heat threshold will prevent hogging memory for \bbs{} which barely get executed. In the same vain this heat value can also get decremented with decreasing usage of a block, eventually resulting in discarding the cache for this block when a certain threshold is met. 
+Once this value is passed, the instructions within the \bb{} will be compiled to machine code.
+The \bb{} will get marked as compiled, and when it gets executed again, the usual interpretation loop will be skipped in favour of the machine code, which gets executed instead. 
+The heat threshold will prevent hogging memory for \bbs{} which barely gets executed. In the same vein, this heat value can also get decremented with decreasing usage of a block, eventually resulting in discarding the cache for this block when a certain threshold is met. 
 
 \section{History of JIT compilers}
-The following summary of the developments around \jit{} compilation are based on the work of John Aycock \cite{aycock2003}.
+The following summary of the developments around \jit{} compilation is based on the work of John Aycock \cite{aycock2003}.
 
 The idea of \jit{} compilation is not a new one.
-Already in the early to mid 1960s work was put towards the idea of translating the program at runtime. These early works mostly concerned themself with the possibilities of compiling small parts of a program ahead of time (for example at program start), keeping them in memory and using them instead of the interpreting the respective instructions \cites{mccarthy1960, uom1964}.
+In the early to mid 1960s, work was put towards translating the program at runtime. These early works primarily concerned themself with the possibilities of compiling small parts of a program ahead of time (for example at program start), keeping them in memory and using them instead of the interpreting the respective instructions \cites{mccarthy1960, uom1964}.
 
-Mixing both native (compiled) and interpreted code, so called \enquote{mixed code}, as the basic idea for \jit{} compilation was explored by Dakin and Poole as well as Dawson in 1973 \cites{Dakin1973, Dawson1973}.
-Here it is notable, that when talking about native or compiled code, the idea was to have these code sections pre-compiled and jumping to and from the interpreted to the compiled sections of the program. 
+Mixing both native (compiled) and interpreted code, so-called \enquote{mixed code}, as the basic idea for \jit{} compilation was explored by Dakin and Poole as well as Dawson in 1973 \cites{Dakin1973, Dawson1973}.
+It is notable, that when talking about native or compiled code, the idea was to have these code sections pre-compiled and jump to and from the interpreted to the compiled sections of the program. 
 Further refining the idea, it was proposed to incorporate transition to native code into the interpretation step \cite{Pittman1987}.
 
-Around the same time, a different school of thinking emerged, \enquote{throw away compilation}. Due to memory concerns arising from keeping both the compiled parts as well as the full interpreter in memory at runtime, Brown proposed to compile the native code dynamically at runtime \cite{Brown1976}.
-This would also allow to throw away compiled sections of the program when exhausting the memory of the machine. If needed later on, the thrown away sections could just be recompiled as needed. 
+Around the same time, a different school of thinking emerged, \enquote{throw away compilation}. Due to memory concerns arising from keeping both the compiled parts and the full interpreter in memory at runtime, Brown proposed compiling the native code dynamically at runtime \cite{Brown1976}.
+This would also allow the program to discard compiled sections when the machine's memory is exhausted. If needed later, the discarded sections could be recompiled as needed.
 
-The aforementioned hot spot detection method was described by Hansen and resulted in the development of Adaptive FORTRAN. 
-The resulting programs, while not always faster than when compiled and optimized, performed better overall \cite{Hansen1974}.
+Hansen described the aforementioned hot spot detection method, which resulted in the development of Adaptive FORTRAN.
+While not always faster than when compiled and optimized, the resulting programs performed better when including other aspects in the comparison \cite{Hansen1974}.
 
 \section{Existing JIT compilers for Smalltalk}
-Having introduced the concept of \jit{} compilation as well as given a partial summary of the historical developments in the field, it is now time to take a look at existing work of JIT compilation for the Smalltalk-80 programming language. 
+Having introduced the concept of \jit{} compilation as well as given a partial summary of the historical developments in the field, it is now time to take a look at the existing work of \jit{} compilation for the Smalltalk-80 programming language. 
 
 \subsection{Efficient Smalltalk}
 This version of Smalltalk was described in a paper by Deutsch and Schiffman in 1984 titled \enquote{Efficient Implementation of the Smalltalk-80 system} \cite{Deutsch1984}.
 In this paper, the authors proposed several areas of improvement compared to the original Smalltalk-80 implementation. 
 Among these changes was a dynamic translation from virtual machine instructions, so called \enquote{v-code} to machine native code or \enquote{n-code}. 
 Due to Smalltalk-80 being an entirely enclosed system, meaning that even the compiler is ran inside the virtual machine, a full emulation of the specified virtual machine must be created for this purpose. 
-This, while resulting in a lot of work, makes the following implementation of the \jit{} compiler very similar to the aforementioned approach which is usually based on a classic interpreter. In the same way, this emulation layer also has to parse the v-code instructions and translate them. 
-The authors compare the translation between v-code and n-code as similar to macro-expansion as a single v-code instruction may, depending on the underlying machine, expand to several n-code instructions. In fact in their paper a five times increase in the code size between v-code and n-code was noted.
+This, while resulting in much work, makes the following implementation of the \jit{} compiler very similar to the aforementioned approach, which is usually based on a classic interpreter. In the same way, this emulation layer also has to parse the v-code instructions and translate them. 
+The authors compare the translation between v-code and n-code as similar to macro-expansion, as a single v-code instruction may, depending on the underlying machine, expand to several n-code instructions. In fact, in their paper, a five times increase in the code size between v-code and n-code was noted.
 
 \subsection{Rochus Keller's LuaJIT implementation}
-LuaJIT is a \jit{} compiler for the Lua programming language. As the name implies, this JIT compiler can not directly work on the Smalltalk-80 system, rather it requires an implementation of the Smalltalk virtual machine in the Lua programming language.
+LuaJIT is a \jit{} compiler for the Lua programming language. As the name implies, this JIT compiler can not directly work on the Smalltalk-80 system. Instead it requires an implementation of the Smalltalk virtual machine in the Lua programming language.
 
-Keller did exactly this, he implemented a \enquote{by the blue book} (this phrase will be explained in \Cref{cha:smalltalk}) virtual machine in Lua and thereafter utilized the existing capabilities of LuaJIT to develop a \jit{} implementation of Smalltalk \cite{Keller2021}.
+Keller did precisely this. He implemented a \enquote{by the blue book} (this phrase will be explained in \Cref{cha:smalltalk}) virtual machine in Lua and after that utilized the existing capabilities of LuaJIT to develop a \jit{} implementation of Smalltalk \cite{Keller2021}.
 
-In the readme of the project, Keller noted that this LuaJIT implementation performs on a similar level as a C\+\+ based interpretation approach. 
+In the project's readme, Keller noted that this LuaJIT implementation performs on a similar level as a C\+\+ based interpretation approach. 
 Further improvements to the implementation may be possible according to Keller, but would require to translate the Smalltalk instructions directly into Lua, so skipping the interpretation stage. While possible, this would require changing the Smalltalk virtual image as the image makes significant assumptions about the virtual machine which cannot be easily replaced with a Lua implementation.
