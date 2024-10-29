@@ -136,7 +136,8 @@ void JIT::translateInstruction(Instruction inst) {
   if (!isContextSwitchingInstruction(bc)) {
     std::cout << "Compiling BC " << bc << std::endl;
     switch (bc) {
-      // TODO: here be magic
+      // here the translation functions for each of the instructions would be
+      // called
     }
   }
 }
