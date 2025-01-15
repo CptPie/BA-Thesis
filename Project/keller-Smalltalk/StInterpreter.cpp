@@ -507,7 +507,7 @@ void Interpreter::dispatchOnThisBytecode() {
         currentBytecode, loc, jit->getInstructionDescription(currentBytecode)});
   }
 
-  // TODO: Essentially we want to break up BasicBlocks on everything apart from
+  // TODO: We want to break up BasicBlocks on everything apart from
   // stack bytecodes so on jumps, returns and sends...
   // while it is rather trivial for jumps, returns and sends are a different
   // story entirely since their target calculations are far more complex

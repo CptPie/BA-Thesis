@@ -3373,7 +3373,8 @@ void Interpreter::primitiveAdd() {
   printf("Interpreter: %x + %x = %x\n", integerArgument, integerReceiver,
          integerArgument + integerReceiver);
 
-#if 1
+#if 0
+  // this block was used to investigate memory location of the stack
   stackPointer += 2;
 
   printf("After offset correction\n");
@@ -3389,7 +3390,7 @@ void Interpreter::primitiveAdd() {
   stacktop2 = memory.integerValueOf(stacktop2);
   printf("Comparison: %b vs %b\n", integerReceiver, stacktop2);
   stackPointer--;
-  stackPointer = stackPointer + 2; // undo our shenanigans, for now
+  stackPointer = stackPointer + 2; // undo the stack modifications
 
   int res;
   std::stringstream ss;
@@ -3410,18 +3411,7 @@ void Interpreter::primitiveAdd() {
 
   jit->compileToMC(ss.str());
 
-  // li t0 1
-  // lh t1 zero {intpointer}
-  // andi t1 1
-  // bne t1 t0 {offset}
-  // slr t1
-  // lh t2 zero {intpointer}
-  // andi t2 1
-  // bne t2 t0 {offset}
-  // slr t2
-  // add t1 t1 t2
-  // somehow store it on the stack
-#endif // JIT_ENABLED
+#endif
 
   if (success()) {
     integerResult = integerReceiver + integerArgument;
